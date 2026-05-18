@@ -1,0 +1,32 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"strictNullChecks": true,
+		"strictPropertyInitialization": false,
+		"outDir": "./dist",
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
+		"target": "ESNext",
+		"baseUrl": "./",
+		"paths": {
+			"@/*": [
+				"./src/*"
+			]
+		},
+		"declaration": true,
+		"removeComments": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"allowSyntheticDefaultImports": true,
+		"sourceMap": true,
+		"incremental": true,
+		"skipLibCheck": true,
+		"noImplicitAny": false,
+		"strictBindCallApply": false,
+		"forceConsistentCasingInFileNames": false,
+		"noFallthroughCasesInSwitch": false
+	},
+	"exclude": [
+		"node_modules"
+	]
+}

@@ -1,0 +1,99 @@
+version: 2
+updates:
+  # Default configuration for npm packages (pnpm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Moscow"
+    versioning-strategy: "auto"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    groups:
+      # NestJS core updates (it is generally safe to update these together)
+      nestjs-core:
+        patterns:
+          - "@nestjs/common"
+          - "@nestjs/core"
+          - "@nestjs/platform-fastify"
+          - "@nestjs/testing"
+        update-types:
+          - "minor"
+          - "patch"
+      # The TypeORM library and related plugins
+      typeorm-group:
+        patterns:
+          - "typeorm"
+          - "@nestjs/typeorm"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group for SWC (fast compilation)
+      swc-group:
+        patterns:
+          - "@swc/cli"
+          - "@swc/core"
+        update-types:
+          - "patch"
+      # Group for Prettier plugins
+      prettier-plugins:
+        patterns:
+          - "prettier-plugin-*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group for the AWS SDK (important for S3)
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignore major updates for certain critical packages
+    ignore:
+      - dependency-name: "@nestjs/common"
+        update-types: [ "version-update:semver-major" ]
+      - dependency-name: "@nestjs/core"
+        update-types: [ "version-update:semver-major" ]
+      - dependency-name: "typeorm"
+        update-types: [ "version-update:semver-major" ]
+      - dependency-name: "multer"
+        versions: [ ">=3.0.0" ]
+      - dependency-name: "helmet"
+        versions: [ ">=9.0.0" ]
+    # Number of open pull requests for updates
+    open-pull-requests-limit: 10
+    # Tags to be included in the PR
+    labels:
+      - "dependencies"
+      - "renovate-bot"
+    # Create a PR even for minor updates to dev dependencies
+    allow:
+      - dependency-type: "direct"
+    # Reviewers (optional—please include your GitHub username)
+    reviewers:
+      - "therossdev"
+    # Automatic merging for patch updates (requires GitHub Rules configuration)
+    # To enable this, you need to add an auto-merge workflow; here is the basic configuration
+    # But you can also add:
+    # pull-request-branch-name:
+    #   separator: "-"
+
+  # A separate check for GitHub Actions (if they are used in the repository)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "ci(gh-actions)"
+    labels:
+      - "github-actions"
+      - "dependencies"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "therossdev"
