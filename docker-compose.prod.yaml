@@ -1,0 +1,73 @@
+services:
+  x-common: &common
+    restart: unless-stopped
+    stop_grace_period: 40s
+    env_file: .env
+    networks:
+      - tgminiapp
+
+  # NestJS application
+  app:
+    <<: *common
+    build:
+      context: .
+      target: builder
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # PostgreSQL database
+  postgres:
+    <<: *common
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aniapi}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - tgminiapp-pg-data:/var/lib/postgresql
+      # Optional: mount a directory with initialization scripts
+      - ./docker/postgres/init-scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - PostgreSQL administration tool
+  pgadmin:
+    <<: *common
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGADMIN_CONFIG_CHECK_EMAIL_DELIVERABILITY: "False"
+      PGADMIN_CONFIG_GLOBALLY_DELIVERABLE: "False"
+      PGADMIN_CONFIG_SECURITY_EMAIL_VALIDATOR_ARGS: "{\"check_deliverability\": CHECK_EMAIL_DELIVERABILITY}"
+    ports:
+      - "8080:80"
+    volumes:
+      - tgminiapp-pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+volumes:
+  tgminiapp-pg-data:
+  tgminiapp-pgadmin-data:
+
+networks:
+  tgminiapp:
+    driver: bridge
