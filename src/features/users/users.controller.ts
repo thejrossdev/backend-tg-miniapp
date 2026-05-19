@@ -44,12 +44,12 @@ export class UsersController {
 	/**
 	 * Fetches a single user by identifier.
 	 *
-	 * @param {string} identifier - The identifier of the user (e.g., ID or username).
+	 * @param {string} identifier - The identifier of the user (e.g., ID).
 	 * @returns {Promise<{ message: string; data: any }>} An object containing a message and the user data without password.
 	 */
 	@Public()
 	@Get(':identifier')
-	@ApiParam({ name: 'identifier', description: 'User ID or username' })
+	@ApiParam({ name: 'identifier', description: 'User ID' })
 	@ApiResponse({ status: 200, description: 'Successfully retrieved the user' })
 	@ApiResponse({ status: 404, description: 'User not found' })
 	async findOne(@Param('identifier') identifier: string): Promise<{ message: string; data: any }> {
