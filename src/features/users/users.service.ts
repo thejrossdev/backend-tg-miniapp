@@ -27,15 +27,15 @@ export class UsersService {
 	}
 
 	/**
-	 * Gets a user by username.
+	 * Gets a user by id.
 	 *
-	 * @param {string} identifier - The username of the user to find.
+	 * @param {string} identifier - The UUID of the user to find.
 	 * @returns {Promise<User>} A promise that resolves to the user entity.
 	 * @throws {NotFoundException} If the user is not found.
 	 */
 	async findOne(identifier: string): Promise<User> {
 		const user = await this.UserRepository.findOne({
-			where: { username: identifier },
+			where: { id: identifier },
 			relations: ['profile'],
 		});
 		if (!user) {

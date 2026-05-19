@@ -20,6 +20,16 @@
 
 ---
 
+## Useful commands
+
+**Generate secrets (e.g., TELEGRAM_SECRET, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET)**
+
+```bash
+openssl rand -hex 32
+```
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](/LICENSE) file for details.

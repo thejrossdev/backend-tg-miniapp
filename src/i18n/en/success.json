@@ -1,0 +1,9 @@
+{
+	"auth": {
+		"sign-in": "User signed in successfully!",
+		"sign-out": "User signed out successfully!",
+		"sign-out-allDevices": "User signed out from all devices successfully!",
+		"refresh-token": "Refresh token generated successfully!",
+		"delete-account": "User deleted successfully!"
+	}
+}
