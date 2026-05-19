@@ -1,0 +1,19 @@
+{
+	"auth": {
+		"telegram": {
+			"user-not-init": "User not initialized!",
+			"user-invalid": "User are invalid!",
+			"user-data-not-found": "User data not found in initData!",
+			"user-id-not-found": "Telegram user ID is missing!",
+			"invalid-hash": "Invalid Hash mismatch!",
+			"expired": "`Auth date is too old or invalid!"
+		},
+		"session": {
+			"not-found": "Session not found!"
+		},
+		"user": {
+			"not-found": "User not found!"
+		}
+	},
+	"bad": "Something went wrong!"
+}
