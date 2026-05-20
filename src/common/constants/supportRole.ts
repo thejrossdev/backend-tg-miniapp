@@ -1,13 +1,5 @@
 import { z } from 'zod';
-
-/**
- * Enum representation of Support roles.
- */
-export enum RoleSupport {
-	'ADMIN' = 'ADMIN',
-	'SPECIALIST' = 'SPECIALIST',
-	'AGENT' = 'AGENT',
-}
+import { RoleSupport } from '@/common/enums';
 
 /**
  * Zod schema for validating support roles.

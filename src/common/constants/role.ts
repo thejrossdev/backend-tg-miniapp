@@ -1,12 +1,5 @@
 import { z } from 'zod';
-
-/**
- * Enum representation of User roles.
- */
-export enum Role {
-	'ADMIN' = 'ADMIN',
-	'USER' = 'USER',
-}
+import { Role } from '@/common/enums';
 
 /**
  * Zod schema for validating user roles.
