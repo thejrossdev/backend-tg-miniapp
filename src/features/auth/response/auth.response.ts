@@ -10,7 +10,7 @@ import { ApiProperty, IntersectionType } from '@nestjs/swagger';
  * @property {string} message - Response message.
  * @property {string} data - Temp sessionId for user.
  */
-export class UserInitResponse {
+export class AuthResponseUserInit {
 	@ApiProperty({
 		description: 'Temporary SessionId with UUID format',
 		example: '5c7ffbef-eceb-40e1-a679-89a524117edc',
@@ -27,7 +27,7 @@ export class UserInitResponse {
  * @property {Omit<User, 'password' | 'sessions' | 'generateUserInfo'>} data - User data excluding sensitive fields.
  * @property {{ access_token: string; refresh_token: string }} tokens - Authentication tokens.
  */
-export class SignInResponse {
+export class AuthResponseSignIn {
 	@ApiProperty({
 		description: 'Response message.',
 		example: 'Success sing in!',
@@ -61,7 +61,7 @@ export class SignInResponse {
  *
  * @property {Session[]} data - List of session entities.
  */
-export class SessionsResponse {
+export class AuthResponseSessions {
 	@ApiProperty({
 		description: 'Array of User session data',
 		required: true,
@@ -75,7 +75,7 @@ export class SessionsResponse {
  *
  * @property {Session} data - Session entity.
  */
-export class SessionResponse {
+export class AuthResponseSession {
 	@ApiProperty({
 		description: 'User session data',
 		required: true,
@@ -93,4 +93,4 @@ export class SessionResponse {
  * @property {string} access_token_refresh_time - Access token expiration or refresh time.
  * @property {string} session_token - Session token.
  */
-export class RefreshTokenResponse extends IntersectionType(MessageResponse, RefreshToken) {}
+export class AuthResponseRefreshToken extends IntersectionType(MessageResponse, RefreshToken) {}

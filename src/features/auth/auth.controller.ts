@@ -17,11 +17,11 @@ import {
 } from '@/features/auth/dto';
 import { InitUserDto } from '@/features/auth/dto/init-user.dto';
 import {
-	RefreshTokenResponse,
-	SessionResponse,
-	SessionsResponse,
-	SignInResponse,
-	UserInitResponse,
+	AuthResponseRefreshToken,
+	AuthResponseSession,
+	AuthResponseSessions,
+	AuthResponseSignIn,
+	AuthResponseUserInit,
 } from '@/features/auth/response';
 import { User } from '@/features/users/entities/user.entity';
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
@@ -53,7 +53,7 @@ export class AuthController {
 	 * Signs in a user.
 	 *
 	 * @param {InitUserDto} initUserDto - User credentials for init.
-	 * @returns {Promise<UserInitResponse>} Initialized response with temporary SessionId.
+	 * @returns {Promise<AuthResponseUserInit>} Initialized response with temporary SessionId.
 	 */
 	@ApiBody({
 		type: InitUserDto,
@@ -61,7 +61,7 @@ export class AuthController {
 	})
 	@ApiOkResponse({
 		description: 'Successfully initialized the user',
-		type: UserInitResponse,
+		type: AuthResponseUserInit,
 	})
 	@ApiUnauthorizedResponse({
 		type: UnauthorizedResponseWithError,
@@ -73,7 +73,7 @@ export class AuthController {
 	})
 	@Public()
 	@Post('init')
-	async initTelegramAuth(@Body() initUserDto: InitUserDto): Promise<UserInitResponse> {
+	async initTelegramAuth(@Body() initUserDto: InitUserDto): Promise<AuthResponseUserInit> {
 		return await this.authService.init(initUserDto);
 	}
 
@@ -82,7 +82,7 @@ export class AuthController {
 	 *
 	 * @param {SignInUserDto} signInUserDto - User credentials for sign in.
 	 * @param {I18nContext} i18n - Context for translate.
-	 * @returns {Promise<SignInResponse>} Sign-in response with tokens and user data.
+	 * @returns {Promise<AuthResponseSignIn>} Sign-in response with tokens and user data.
 	 */
 	@ApiBody({
 		type: SignInUserDto,
@@ -90,7 +90,7 @@ export class AuthController {
 	})
 	@ApiOkResponse({
 		description: 'Successfully signed in',
-		type: SignInResponse,
+		type: AuthResponseSignIn,
 	})
 	@ApiBadRequestResponse({
 		type: BadRequestResponseWithError,
@@ -110,7 +110,7 @@ export class AuthController {
 	})
 	@Public()
 	@Post('sign-in')
-	async init(@Body() signInUserDto: SignInUserDto, @I18n() i18n: I18nContext): Promise<SignInResponse> {
+	async init(@Body() signInUserDto: SignInUserDto, @I18n() i18n: I18nContext): Promise<AuthResponseSignIn> {
 		const data = await this.authService.signIn(signInUserDto);
 		const { telegramIdEncrypted, telegramIdHash, sessions, ...result } = data.data;
 
@@ -189,7 +189,7 @@ export class AuthController {
 	 * Retrieves all sessions for a user.
 	 *
 	 * @param {string} userId - ID of the user.
-	 * @returns {Promise<SessionsResponse>} List of user sessions.
+	 * @returns {Promise<AuthResponseSessions>} List of user sessions.
 	 */
 	@ApiProperty({
 		description: 'UUID of user',
@@ -197,7 +197,7 @@ export class AuthController {
 		example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
 	})
 	@ApiOkResponse({
-		type: SessionsResponse,
+		type: AuthResponseSessions,
 	})
 	@ApiBadRequestResponse({
 		type: BadRequestResponseWithError,
@@ -217,7 +217,7 @@ export class AuthController {
 	@ApiBearerAuth('Bearer')
 	@Get('sessions/:userId')
 	@Roles(Role.ADMIN)
-	async sessions(@Param('userId') userId: string): Promise<SessionsResponse> {
+	async sessions(@Param('userId') userId: string): Promise<AuthResponseSessions> {
 		const data = await this.authService.getSessions(userId);
 		return { data };
 	}
@@ -226,10 +226,10 @@ export class AuthController {
 	 * Retrieves all sessions for current user.
 	 *
 	 * @param {User} user - ID of the user.
-	 * @returns {Promise<SessionsResponse>} List of user sessions.
+	 * @returns {Promise<AuthResponseSessions>} List of user sessions.
 	 */
 	@ApiOkResponse({
-		type: SessionsResponse,
+		type: AuthResponseSessions,
 	})
 	@ApiBadRequestResponse({
 		type: BadRequestResponseWithError,
@@ -248,7 +248,7 @@ export class AuthController {
 	})
 	@ApiBearerAuth('Bearer')
 	@Get('sessions/me')
-	async sessionsMe(@UserDec() user: User): Promise<SessionsResponse> {
+	async sessionsMe(@UserDec() user: User): Promise<AuthResponseSessions> {
 		const data = await this.authService.getSessions(user.id);
 		return { data };
 	}
@@ -257,7 +257,7 @@ export class AuthController {
 	 * Retrieves a session by ID.
 	 *
 	 * @param {string} id - Session ID.
-	 * @returns {Promise<SessionResponse>} Session details.
+	 * @returns {Promise<AuthResponseSession>} Session details.
 	 */
 	@ApiProperty({
 		description: 'UUID of session',
@@ -265,7 +265,7 @@ export class AuthController {
 		example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
 	})
 	@ApiOkResponse({
-		type: SessionResponse,
+		type: AuthResponseSession,
 	})
 	@ApiNotFoundResponse({
 		type: NotFoundResponseWithError,
@@ -284,7 +284,7 @@ export class AuthController {
 	})
 	@ApiBearerAuth('Bearer')
 	@Get('session/:id')
-	async session(@Param('id') id: string): Promise<SessionResponse> {
+	async session(@Param('id') id: string): Promise<AuthResponseSession> {
 		const data = await this.authService.getSession(id);
 		return { data };
 	}
@@ -294,14 +294,14 @@ export class AuthController {
 	 *
 	 * @param {RefreshTokenDto} dto - Data for refreshing the token.
 	 * @param {I18nContext} i18n - Context for translate.
-	 * @returns {Promise<RefreshTokenResponse>} Refresh token response.
+	 * @returns {Promise<AuthResponseRefreshToken>} Refresh token response.
 	 */
 	@ApiBody({
 		type: RefreshTokenDto,
 		description: 'Data for refreshing the token',
 	})
 	@ApiOkResponse({
-		type: RefreshTokenResponse,
+		type: AuthResponseRefreshToken,
 	})
 	@ApiNotFoundResponse({
 		type: NotFoundResponseWithError,
@@ -321,7 +321,7 @@ export class AuthController {
 	@ApiBearerAuth('Bearer')
 	@UseGuards(JwtRefreshGuard)
 	@Patch('refresh-token')
-	async refreshToken(@Body() dto: RefreshTokenDto, @I18n() i18n: I18nContext): Promise<RefreshTokenResponse> {
+	async refreshToken(@Body() dto: RefreshTokenDto, @I18n() i18n: I18nContext): Promise<AuthResponseRefreshToken> {
 		const data = await this.authService.refreshToken(dto);
 		return {
 			message: await i18n.t('refresh-token'),
