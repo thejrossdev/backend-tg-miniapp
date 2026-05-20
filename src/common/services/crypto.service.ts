@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import sodium from 'libsodium-wrappers';
-import { Logger } from 'nestjs-pino';
 
 /**
  * Service for Telegram UserId crypto logic.
@@ -15,14 +14,10 @@ export class CryptoService {
 	 * Creates an instance of CryptoService.
 	 *
 	 * @param {ConfigService<Env>} config - Configuration service for environment variables.
-	 * @param {Logger} logger - Logger instance.
 	 * @throws {Error} if Sodium is not initialized
 	 * @throws {Error} if Failed to decrypt telegramId
 	 */
-	constructor(
-		private readonly config: ConfigService<Env>,
-		private readonly logger: Logger,
-	) {
+	constructor(private readonly config: ConfigService<Env>) {
 		if (this.config.get<string>('TELEGRAM_SECRET')) {
 			CryptoService.ENC_KEY = this.getTelegramEncryptionKey();
 		}

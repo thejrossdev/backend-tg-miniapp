@@ -180,7 +180,6 @@ export class UsersController {
 		@UploadedFile()
 		file: MemoryStorageFile,
 	) {
-		const upFile = await this.fileService.uploadFile(file);
-		return upFile;
+		return await this.fileService.uploadFile(file);
 	}
 }
