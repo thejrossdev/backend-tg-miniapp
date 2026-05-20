@@ -5,13 +5,13 @@ import { z } from 'zod';
  */
 export const EnvSchema = z.object({
 	APP_NAME: z.string(),
-	APP_URL: z.string(),
+	APP_URL: z.url(),
 	HOST: z.string(),
 	TELEGRAM_BOT_TOKEN: z.string(),
 	TELEGRAM_SECRET: z.string().min(64),
 	NODE_ENV: z.enum(['development', 'production', 'test', 'provision']).default('development'),
 	PORT: z.coerce.number(),
-	ALLOW_CORS_URL: z.string().url(),
+	ALLOW_CORS_URL: z.url(),
 	ACCESS_TOKEN_SECRET: z.string().min(10).max(128),
 	ACCESS_TOKEN_EXPIRATION: z.string().min(1).max(60),
 	REFRESH_TOKEN_SECRET: z.string().min(10).max(128),
