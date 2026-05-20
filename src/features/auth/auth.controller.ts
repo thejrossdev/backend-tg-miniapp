@@ -1,4 +1,4 @@
-import { Role } from '@/common/constants';
+import { Role } from '@/common/enums';
 import { Public, Roles, User as UserDec } from '@/common/decorators';
 import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
 import {

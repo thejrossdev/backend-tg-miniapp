@@ -1,4 +1,5 @@
 import { TELEGRAM_SESSION_TTL, TELEGRAM_SESSION_TTL_SEC } from '@/common/constants/session';
+import { CryptoService } from '@/common/services';
 import { Env, generateRefreshTime } from '@/common/utils';
 import { TransactionService } from '@/database';
 import {
@@ -13,7 +14,6 @@ import {
 import { InitUserDto } from '@/features/auth/dto/init-user.dto';
 import { Session } from '@/features/auth/entities/session.entity';
 import { AuthTokens, InitUser, LoginUser, RefreshToken, RegisterUser } from '@/features/auth/types/types';
-import { CryptoService } from '@/features/crypto/crypto.service';
 import { User } from '@/features/users/entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';

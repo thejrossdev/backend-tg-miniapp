@@ -1,5 +1,5 @@
-import { Role } from '@/common/constants';
 import { Roles, User as UserDec } from '@/common/decorators';
+import { Role } from '@/common/enums';
 import {
 	BadRequestResponseWithError,
 	NotFoundResponseWithError,
