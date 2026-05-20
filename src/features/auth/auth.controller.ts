@@ -1,3 +1,4 @@
+import { Role } from '@/common/constants';
 import { Public, Roles, User as UserDec } from '@/common/decorators';
 import { JwtRefreshGuard } from '@/common/guards/jwt-refresh.guard';
 import {
@@ -215,7 +216,7 @@ export class AuthController {
 	})
 	@ApiBearerAuth('Bearer')
 	@Get('sessions/:userId')
-	@Roles('ADMIN')
+	@Roles(Role.ADMIN)
 	async sessions(@Param('userId') userId: string): Promise<SessionsResponse> {
 		const data = await this.authService.getSessions(userId);
 		return { data };
@@ -362,7 +363,7 @@ export class AuthController {
 	})
 	@ApiBearerAuth('Bearer')
 	@Delete('delete-account')
-	@Roles('ADMIN')
+	@Roles(Role.ADMIN)
 	async deleteUser(@Body() deleteUserDto: DeleteUserDto, @I18n() i18n: I18nContext): Promise<MessageResponse> {
 		await this.authService.deleteAccount(deleteUserDto);
 		return { message: await i18n.t('delete-account') };
