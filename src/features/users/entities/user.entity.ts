@@ -1,7 +1,8 @@
+import { Role } from '@/common/constants';
+import { RoleSupport } from '@/common/constants/supportRole';
 import { Base } from '@/common/entities';
 import { Session } from '@/features/auth/entities/session.entity';
-import { Profile } from '@/features/users/entities/profile.entity';
-import { Column, Entity, OneToMany, OneToOne, Relation } from 'typeorm';
+import { Column, Entity, Index, OneToMany, Relation } from 'typeorm';
 
 /**
  * Entity representing a user account.
@@ -10,6 +11,7 @@ import { Column, Entity, OneToMany, OneToOne, Relation } from 'typeorm';
  * @property {Relation<Profile>} profile - Profile associated with the user.
  */
 @Entity()
+@Index(['isSupport', 'roleSupport', 'language', 'role'])
 export class User extends Base {
 	/**
 	 * The user's tg id.
@@ -35,6 +37,43 @@ export class User extends Base {
 	})
 	telegramIdHash: string;
 
+	/**
+	 * The user's language code.
+	 * @type {string}
+	 */
+	@Column({
+		type: 'varchar',
+		length: 5,
+		default: 'ru',
+		nullable: false,
+	})
+	language: string;
+
+	// =========== BOOLEANS ===========
+
+	/**
+	 * Is user support. Can user access to support panel.
+	 * @type {boolean}
+	 */
+	@Column({ type: 'boolean', nullable: false, default: false })
+	isSupport: boolean;
+
+	// =========== ENUMS ===========
+
+	/**
+	 * The Role of the user.
+	 * @type {string}
+	 */
+	@Column({ type: 'enum', enum: Role, default: Role.USER })
+	role?: string;
+
+	/**
+	 * The support role of the user.
+	 * @type {string}
+	 */
+	@Column({ type: 'enum', enum: RoleSupport, nullable: true })
+	roleSupport?: string;
+
 	// =========== RELATIONSHIPS ===========
 
 	/**
@@ -45,13 +84,4 @@ export class User extends Base {
 		cascade: true,
 	})
 	sessions: Relation<Session[]>;
-
-	/**
-	 * Profile associated with the user.
-	 * @type {Relation<Profile>}
-	 */
-	@OneToOne(() => Profile, (profile) => profile.user, {
-		cascade: true,
-	})
-	profile: Relation<Profile>;
 }

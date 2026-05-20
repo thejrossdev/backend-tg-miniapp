@@ -21,9 +21,7 @@ export class UsersService {
 	 * @returns {Promise<User[]>} A promise that resolves to an array of users with profiles.
 	 */
 	async findAll(): Promise<User[]> {
-		return await this.UserRepository.find({
-			relations: ['profile'],
-		});
+		return await this.UserRepository.find({});
 	}
 
 	/**
@@ -36,7 +34,6 @@ export class UsersService {
 	async findOne(identifier: string): Promise<User> {
 		const user = await this.UserRepository.findOne({
 			where: { id: identifier },
-			relations: ['profile'],
 		});
 		if (!user) {
 			throw new NotFoundException('User not found.');

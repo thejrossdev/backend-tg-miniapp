@@ -14,7 +14,6 @@ import { InitUserDto } from '@/features/auth/dto/init-user.dto';
 import { Session } from '@/features/auth/entities/session.entity';
 import { AuthTokens, InitUser, LoginUser, RefreshToken, RegisterUser } from '@/features/auth/types/types';
 import { CryptoService } from '@/features/crypto/crypto.service';
-import { Profile } from '@/features/users/entities/profile.entity';
 import { User } from '@/features/users/entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
@@ -42,7 +41,6 @@ export class AuthService {
 	 * @param {Cache} cacheManager - Service for caching data (e.g. memory, redis storages).
 	 * @param {ConfigService<Env>} config - Configuration service for environment variables.
 	 * @param {Repository<User>} UserRepository - Repository for user entities.
-	 * @param {Repository<Profile>} profileRepository - Repository for profile entities.
 	 * @param {Repository<Session>} SessionRepository - Repository for session entities.
 	 * @param {TransactionService} transactionService - TransactionService to run typeorm query.
 	 * @param {Logger} logger - Logger instance.
@@ -55,8 +53,6 @@ export class AuthService {
 		private readonly config: ConfigService<Env>,
 		@InjectRepository(User)
 		private readonly UserRepository: Repository<User>,
-		@InjectRepository(Profile)
-		private readonly profileRepository: Repository<Profile>,
 		@InjectRepository(Session)
 		private readonly SessionRepository: Repository<Session>,
 		private readonly transactionService: TransactionService,
@@ -282,12 +278,7 @@ export class AuthService {
 				const user = manager.create(User, createUserDto);
 				await manager.insert(User, user);
 
-				const profile = manager.create(Profile, {
-					user_id: user.id,
-				});
-				await manager.insert(Profile, profile);
-
-				return { user, profile };
+				return { user };
 			});
 
 			return { data: result.user };
@@ -326,7 +317,6 @@ export class AuthService {
 
 		let user = await this.UserRepository.findOne({
 			where: [{ telegramIdHash: telegramIdHash }],
-			relations: ['profile'],
 		});
 		if (!user) {
 			const telegramIdEncrypted = await this.cryptoService.encryptTelegramId(telegramId);
