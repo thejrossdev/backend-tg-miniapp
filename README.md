@@ -22,10 +22,29 @@
 
 ## Useful commands
 
-**Generate secrets (e.g., TELEGRAM_SECRET, ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET)**
+**Generate secrets (e.g., `TELEGRAM_SECRET`, `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`)**
+
+```bash
+make gen-secret
+```
+
+or
 
 ```bash
 openssl rand -hex 32
+```
+
+**Convert dependency graph from `mermaid` to `svg`**  
+_Need installed [mermaid-cli](https://github.com/mermaid-js/mermaid-cli)_
+
+```bash
+make gen-deps
+```
+
+or
+
+```bash
+mmdc -i ./docs/assets/deps.mermaid -o ./docs/assets/deps.svg
 ```
 
 ---

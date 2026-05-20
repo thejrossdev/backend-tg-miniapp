@@ -30,6 +30,7 @@ lint: ## 🔍 Run linter
 	$(PNPM) lint
 format: ## 🎨 Format code with Prettier
 	$(PNPM) format
+
 # 🐳 Docker & Infrastructure
 docker-up: ## ☁️ Start production stack (api, postgres)
 	$(DOCKER_COMPOSE) up -d
@@ -49,3 +50,9 @@ db-status: ## 🟢 Check PostgreSQL container status
 	$(DOCKER_COMPOSE) ps postgres
 db-shell: ## 🐘 Open PostgreSQL CLI
 	$(DOCKER_COMPOSE) exec postgres psql -U postgres
+
+# Generate
+gen-secret:
+	openssl rand -hex 32
+gen-deps:
+	mmdc -i ./docs/assets/deps.mermaid -o ./docs/assets/deps.svg

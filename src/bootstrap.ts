@@ -1,4 +1,5 @@
 import { Env } from '@/common/utils';
+import { spelunker } from '@/spelunker';
 import { swagger } from '@/swagger';
 import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
@@ -59,9 +60,10 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
 		}),
 	);
 
-	// Swagger setup to enable API documentation in non-production environments
+	// Swagger setup to enable API documentation and dependency graph in non-production environments
 	if (configService.get('NODE_ENV') !== 'production') {
 		await swagger(app);
+		await spelunker(app);
 	}
 
 	// Global error logging interceptor
