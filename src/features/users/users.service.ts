@@ -1,6 +1,7 @@
 import { User } from '@/features/users/entities/user.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { I18nContext, I18nService } from 'nestjs-i18n';
 import { Repository } from 'typeorm';
 
 /**
@@ -11,9 +12,13 @@ export class UsersService {
 	/**
 	 * Creates an instance of UsersService.
 	 *
+	 * @param {I18nService} i18n - Service for translating.
 	 * @param {Repository<User>} UserRepository - Repository for user entities.
 	 */
-	constructor(@InjectRepository(User) private readonly UserRepository: Repository<User>) {}
+	constructor(
+		private readonly i18n: I18nService,
+		@InjectRepository(User) private readonly UserRepository: Repository<User>,
+	) {}
 
 	/**
 	 * Retrieves all users with their profiles.
@@ -36,7 +41,7 @@ export class UsersService {
 			where: { id: identifier },
 		});
 		if (!user) {
-			throw new NotFoundException('User not found.');
+			throw new NotFoundException(this.i18n.t('errors.users.not-found', { lang: I18nContext.current()?.lang }));
 		}
 		return user;
 	}

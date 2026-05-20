@@ -15,5 +15,8 @@
 			"not-found": "User not found!"
 		}
 	},
+	"users": {
+		"not-found": "User not found!"
+	},
 	"bad": "Something went wrong!"
 }

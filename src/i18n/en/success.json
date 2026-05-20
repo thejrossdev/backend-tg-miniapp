@@ -5,5 +5,10 @@
 		"sign-out-allDevices": "User signed out from all devices successfully!",
 		"refresh-token": "Refresh token generated successfully!",
 		"delete-account": "User deleted successfully!"
+	},
+	"users": {
+		"find": "User fetched successfully!",
+		"me": "User fetched successfully!",
+		"find-all": "Users fetched successfully!"
 	}
 }
