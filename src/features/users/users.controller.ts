@@ -1,27 +1,14 @@
-import { Roles, User as UserDec } from '@/common/decorators';
+import { Roles, SuccessMessage, User as UserDec } from '@/common/decorators';
 import { Role } from '@/common/enums';
-import {
-	BadRequestResponseWithError,
-	NotFoundResponseWithError,
-	UnauthorizedResponse,
-	UnauthorizedResponseWithError,
-} from '@/common/types';
+import { GI18nService } from '@/common/services';
+import { SuccessResponse } from '@/common/types';
 import { FileService } from '@/features/file/file.service';
-import { User } from '@/features/users/entities/user.entity';
-import { UserResponseFindAll, UserResponseFindOne, UserResponseMe } from '@/features/users/response';
+import { User } from '@/features/users/entities';
+import { UserExceptionNotFound } from '@/features/users/exceptions';
+import { UserSafe } from '@/features/users/types';
 import { FileInterceptor, MemoryStorageFile, UploadedFile } from '@blazity/nest-file-fastify';
 import { Controller, Get, Param, Post, UseInterceptors } from '@nestjs/common';
-import {
-	ApiBadRequestResponse,
-	ApiBearerAuth,
-	ApiBody,
-	ApiConsumes,
-	ApiNotFoundResponse,
-	ApiOkResponse,
-	ApiProperty,
-	ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { I18n, I18nContext } from 'nestjs-i18n';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiNotFoundResponse, ApiOkResponse, ApiProperty } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 
 /**
@@ -35,10 +22,12 @@ export class UsersController {
 	/**
 	 * Creates an instance of UsersController.
 	 *
+	 * @param {GI18nService} i18n - Service for translating.
 	 * @param {UsersService} usersService - Service for user-related operations.
 	 * @param {FileService} fileService - Service for file-related operations.
 	 */
 	constructor(
+		private readonly i18n: GI18nService,
 		private readonly usersService: UsersService,
 		private readonly fileService: FileService,
 	) {}
@@ -46,96 +35,69 @@ export class UsersController {
 	/**
 	 * Fetches all users.
 	 *
-	 * @param {I18nContext} i18n - Context for translate.
-	 * @returns {Promise<UserResponseFindAll>} An object containing a message and an array of user data.
+	 * @returns {Promise<UserSafe[]>} An object containing a message and an array of user data.
 	 */
+	@ApiOkResponse({
+		type: SuccessResponse<UserSafe[]>,
+	})
 	@Get()
 	@Roles(Role.ADMIN)
-	async findAll(@I18n() i18n: I18nContext): Promise<UserResponseFindAll> {
+	@SuccessMessage('success.users.found-all')
+	async findAll(): Promise<UserSafe[]> {
 		const users = await this.usersService.findAll();
-		const data = users.map(({ telegramIdEncrypted, telegramIdHash, ...user }) => ({
-			...user,
-		}));
-		return { message: await i18n.t('success.users.find-all'), data };
+		return users.map((user: User) => this.usersService.getSafeUser(user));
 	}
 
 	/**
 	 * Fetches current user.
 	 *
 	 * @param {User} userReq - current user from Request.
-	 * @param {I18nContext} i18n - Context for translate.
-	 * @returns {Promise<UserResponseMe>} An object containing a message and the user data without password.
+	 * @returns {Promise<UserSafe>} An object containing a message and the user data without password.
 	 */
 	@ApiProperty({
 		description: 'UUID of user',
-		type: 'string',
 		example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
 		name: 'identifier',
 	})
 	@ApiOkResponse({
-		type: UserResponseMe,
+		type: SuccessResponse<UserSafe>,
 	})
 	@ApiNotFoundResponse({
-		type: NotFoundResponseWithError,
-		example: {
-			message: 'User not found.',
-			error: 'Not found',
-			statusCode: 404,
-		},
+		type: UserExceptionNotFound,
 	})
-	@ApiUnauthorizedResponse({
-		type: UnauthorizedResponse,
-		example: {
-			message: 'Unauthorized',
-			statusCode: 401,
-		},
+	@ApiNotFoundResponse({
+		type: UserExceptionNotFound,
 	})
 	@ApiBearerAuth('Bearer')
 	@Get('me')
-	async fetchMe(@UserDec() userReq: User, @I18n() i18n: I18nContext): Promise<UserResponseMe> {
-		const user = await this.usersService.findOne(userReq.id);
-		const { telegramIdEncrypted, telegramIdHash, ...data } = user;
-		return { message: await i18n.t('success.users.me'), data };
+	@SuccessMessage('success.users.found')
+	async fetchMe(@UserDec() userReq: User): Promise<UserSafe> {
+		return this.usersService.getSafeUser(await this.usersService.findOne(userReq.id));
 	}
 
 	/**
 	 * Fetches a single user by identifier.
 	 *
 	 * @param {string} identifier - The identifier of the user (e.g., ID).
-	 * @param {I18nContext} i18n - Context for translate.
-	 * @returns {Promise<UserResponseFindOne>} An object containing a message and the user data without password.
+	 * @returns {Promise<UserSafe>} An object containing a message and the user data without password.
 	 */
 	@ApiProperty({
 		description: 'UUID of user',
-		type: 'string',
 		example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
 		name: 'identifier',
 	})
 	@ApiOkResponse({
-		type: UserResponseFindOne,
+		type: SuccessResponse<UserSafe>,
 	})
 	@ApiNotFoundResponse({
-		type: NotFoundResponseWithError,
-		example: {
-			message: 'User not found.',
-			error: 'Not found',
-			statusCode: 404,
-		},
-	})
-	@ApiUnauthorizedResponse({
-		type: UnauthorizedResponse,
-		example: {
-			message: 'Unauthorized',
-			statusCode: 401,
-		},
+		type: UserExceptionNotFound,
 	})
 	@ApiBearerAuth('Bearer')
 	@Roles(Role.ADMIN)
+	@SuccessMessage('success.users.found')
 	@Get(':identifier')
-	async findOne(@Param('identifier') identifier: string, @I18n() i18n: I18nContext): Promise<UserResponseFindOne> {
-		const user = await this.usersService.findOne(identifier);
-		const { telegramIdEncrypted, telegramIdHash, ...data } = user;
-		return { message: await i18n.t('success.users.find'), data };
+	async findOne(@Param('identifier') identifier: string): Promise<UserSafe> {
+		return this.usersService.getSafeUser(await this.usersService.findOne(identifier));
 	}
 
 	/**
@@ -157,22 +119,6 @@ export class UsersController {
 					description: 'File to upload (supports any file type)',
 				},
 			},
-		},
-	})
-	@ApiBadRequestResponse({
-		type: BadRequestResponseWithError,
-		example: {
-			message: 'Something went wrong!',
-			error: 'Bad request',
-			statusCode: 500,
-		},
-	})
-	@ApiUnauthorizedResponse({
-		type: UnauthorizedResponseWithError,
-		example: {
-			message: 'User are invalid!',
-			error: 'Unauthorized',
-			statusCode: 401,
 		},
 	})
 	@Post()

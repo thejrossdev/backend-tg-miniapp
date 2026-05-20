@@ -1,6 +1,6 @@
 import { Base } from '@/common/entities';
 import { Role, RoleSupport } from '@/common/enums';
-import { Session } from '@/features/auth/entities/session.entity';
+import { Session } from '@/features/auth/entities';
 import { Column, Entity, Index, OneToMany, Relation } from 'typeorm';
 
 /**

@@ -1,4 +1,10 @@
 {
+	"default": "Operation completed successfully",
+	"resource-found": "Resource retrieved successfully",
+	"resource-created": "Resource created successfully",
+	"resource-updated": "Resource updated successfully",
+	"resource-deleted": "Resource deleted successfully",
+
 	"auth": {
 		"sign-in": "User signed in successfully!",
 		"sign-out": "User signed out successfully!",
@@ -7,8 +13,10 @@
 		"delete-account": "User deleted successfully!"
 	},
 	"users": {
-		"find": "User fetched successfully!",
-		"me": "User fetched successfully!",
-		"find-all": "Users fetched successfully!"
+		"found": "User retrieved successfully",
+		"found-all": "Users retrieved successfully",
+		"created": "User created successfully",
+		"updated": "User updated successfully",
+		"deleted": "User deleted successfully"
 	}
 }

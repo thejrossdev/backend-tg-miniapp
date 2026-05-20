@@ -1,20 +1,22 @@
-import { TELEGRAM_SESSION_TTL, TELEGRAM_SESSION_TTL_SEC } from '@/common/constants/session';
-import { CryptoService } from '@/common/services';
+import { TELEGRAM_SESSION_TTL, TELEGRAM_SESSION_TTL_SEC } from '@/common/constants';
+import { CryptoService, GI18nService } from '@/common/services';
 import { Env, generateRefreshTime } from '@/common/utils';
 import { TransactionService } from '@/database';
 import {
 	CreateUserDto,
 	DeleteUserDto,
+	InitUserDto,
 	RefreshTokenDto,
 	SignInUserDto,
 	SignOutAllDeviceUserDto,
 	SignOutUserDto,
 	ValidateUserDto,
 } from '@/features/auth/dto';
-import { InitUserDto } from '@/features/auth/dto/init-user.dto';
-import { Session } from '@/features/auth/entities/session.entity';
-import { AuthTokens, InitUser, LoginUser, RefreshToken, RegisterUser } from '@/features/auth/types/types';
-import { User } from '@/features/users/entities/user.entity';
+import { Session } from '@/features/auth/entities';
+import { SessionExceptionNotFound } from '@/features/auth/exceptions';
+import { AuthUserInit, AuthUserSessionAccessTokens, AuthUserSignedIn, AuthUserTokens } from '@/features/auth/types';
+import { User } from '@/features/users/entities';
+import { UserExceptionNotFound } from '@/features/users/exceptions';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -23,7 +25,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Cache } from 'cache-manager';
 import * as crypto from 'crypto';
 import { randomUUID } from 'crypto';
-import { I18nContext, I18nService } from 'nestjs-i18n';
+import { I18nContext } from 'nestjs-i18n';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 
@@ -37,7 +39,7 @@ export class AuthService {
 	 *
 	 * @param {JwtService} jwtService - JWT service for token operations.
 	 * @param {CryptoService} cryptoService - Crypto service for telegram hashing and encode/decode operations.
-	 * @param {I18nService} i18n - Service for translating.
+	 * @param {GI18nService} i18n - Service for translating.
 	 * @param {Cache} cacheManager - Service for caching data (e.g. memory, redis storages).
 	 * @param {ConfigService<Env>} config - Configuration service for environment variables.
 	 * @param {Repository<User>} UserRepository - Repository for user entities.
@@ -48,7 +50,7 @@ export class AuthService {
 	constructor(
 		private readonly jwtService: JwtService,
 		private readonly cryptoService: CryptoService,
-		private readonly i18n: I18nService,
+		private readonly i18n: GI18nService,
 		@Inject(CACHE_MANAGER) private cacheManager: Cache,
 		private readonly config: ConfigService<Env>,
 		@InjectRepository(User)
@@ -62,16 +64,15 @@ export class AuthService {
 	/**
 	 * Signs in a user account.
 	 *
+	 * // TODO Create exceptions for this method
 	 * @param {InitUserDto} dto - Sign-in DTO.
-	 * @returns {Promise<InitUser>} Login response with user data and tokens.
+	 * @returns {Promise<AuthUserInit>} Login response with user data and tokens.
 	 */
-	async init(dto: InitUserDto): Promise<InitUser> {
+	async init(dto: InitUserDto): Promise<AuthUserInit> {
 		const isValidTelegramData = this.validateTelegramInitData(dto.initData);
 
 		if (!isValidTelegramData) {
-			throw new UnauthorizedException(
-				this.i18n.t('errors.auth.telegram.user-invalid', { lang: I18nContext.current()?.lang }),
-			);
+			throw new UnauthorizedException(this.i18n.t('errors.auth.telegram.user-invalid'));
 		}
 
 		const sessionId = randomUUID();
@@ -86,9 +87,9 @@ export class AuthService {
 	 * Signs in a user account.
 	 *
 	 * @param {SignInUserDto} dto - Sign-in DTO.
-	 * @returns {Promise<LoginUser} Login response with user data and tokens.
+	 * @returns {Promise<AuthUserSignedIn} Login response with user data and tokens.
 	 */
-	async signIn(dto: SignInUserDto): Promise<LoginUser> {
+	async signIn(dto: SignInUserDto): Promise<AuthUserSignedIn> {
 		const user = await this.validateUser(dto);
 		const tokens = await this.generateTokens(user);
 		const sessionData = this.SessionRepository.create({
@@ -121,10 +122,7 @@ export class AuthService {
 		const session = await this.SessionRepository.findOne({
 			where: { id: dto.session_token },
 		});
-		if (!session)
-			throw new NotFoundException(
-				this.i18n.t('errors.auth.session.not-found', { lang: I18nContext.current()?.lang }),
-			);
+		if (!session) throw new SessionExceptionNotFound(dto.session_token, this.i18n);
 		await this.SessionRepository.remove(session);
 	}
 
@@ -142,9 +140,9 @@ export class AuthService {
 	 * Generates access and refresh tokens for a user.
 	 *
 	 * @param {User} user - User entity.
-	 * @returns {Promise<AuthTokens>} Object containing access and refresh tokens.
+	 * @returns {Promise<AuthUserTokens>} Object containing access and refresh tokens.
 	 */
-	async generateTokens(user: User): Promise<AuthTokens> {
+	async generateTokens(user: User): Promise<AuthUserTokens> {
 		const [access_token, refresh_token] = await Promise.all([
 			this.jwtService.signAsync(
 				{
@@ -175,17 +173,14 @@ export class AuthService {
 	 * Refreshes the user's access token.
 	 *
 	 * @param {RefreshTokenDto} dto - Refresh token DTO.
-	 * @returns {Promise<RefreshToken>} New tokens and session info.
+	 * @returns {Promise<AuthUserSessionAccessTokens>} New tokens and session info.
 	 * @throws {NotFoundException} If user or session is not found.
 	 */
-	async refreshToken(dto: RefreshTokenDto): Promise<RefreshToken> {
+	async refreshToken(dto: RefreshTokenDto): Promise<AuthUserSessionAccessTokens> {
 		const user = await this.UserRepository.findOne({
 			where: { id: dto.user_id },
 		});
-		if (!user)
-			throw new NotFoundException(
-				this.i18n.t('errors.auth.user.not-found', { lang: I18nContext.current()?.lang }),
-			);
+		if (!user) throw new NotFoundException(this.i18n.t('errors.auth.user.not-found'));
 		const { access_token, refresh_token } = await this.generateTokens(user);
 		const session = await this.SessionRepository.findOne({
 			where: {
@@ -193,10 +188,7 @@ export class AuthService {
 				user_id: dto.user_id,
 			},
 		});
-		if (!session)
-			throw new NotFoundException(
-				this.i18n.t('errors.auth.session.not-found', { lang: I18nContext.current()?.lang }),
-			);
+		if (!session) throw new SessionExceptionNotFound(dto.session_token, this.i18n);
 		session.refresh_token = refresh_token;
 		const access_token_refresh_time = await generateRefreshTime();
 		await this.SessionRepository.save(session);
@@ -235,10 +227,7 @@ export class AuthService {
 				id: id,
 			},
 		});
-		if (!session)
-			throw new NotFoundException(
-				this.i18n.t('errors.auth.session.not-found', { lang: I18nContext.current()?.lang }),
-			);
+		if (!session) throw new SessionExceptionNotFound(id, this.i18n);
 		return session;
 	}
 
@@ -254,10 +243,7 @@ export class AuthService {
 		const user = await this.UserRepository.findOne({
 			where: { id: dto.user_id },
 		});
-		if (!user)
-			throw new NotFoundException(
-				this.i18n.t('errors.auth.user.not-found', { lang: I18nContext.current()?.lang }),
-			);
+		if (!user) throw new UserExceptionNotFound(dto.user_id, this.i18n);
 		try {
 			await this.UserRepository.remove(user);
 		} catch (e) {
@@ -268,11 +254,12 @@ export class AuthService {
 	/**
 	 * Registers a new user account with email and password.
 	 *
+	 * // TODO Create exceptions for this method
 	 * @param {CreateUserDto} createUserDto - Data for creating a new user.
-	 * @returns {Promise<RegisterUser>} Registered user data.
+	 * @returns {Promise<User>} Registered user data.
 	 * @throws {BadRequestException} If registration fails.
 	 */
-	async create(createUserDto: CreateUserDto): Promise<RegisterUser> {
+	async create(createUserDto: CreateUserDto): Promise<User> {
 		try {
 			const result = await this.transactionService.runInTransaction(async (manager) => {
 				const user = manager.create(User, createUserDto);
@@ -281,16 +268,17 @@ export class AuthService {
 				return { user };
 			});
 
-			return { data: result.user };
+			return result.user;
 		} catch (e) {
 			this.logger.error(e);
-			throw new BadRequestException(this.i18n.t('errors.bad', { lang: I18nContext.current()?.lang }));
+			throw new BadRequestException();
 		}
 	}
 
 	/**
 	 * Validates a user with identifier and password.
 	 *
+	 * // TODO Create exceptions for this method
 	 * @param {ValidateUserDto} dto - Validation DTO containing initData and sessionId.
 	 * @returns {Promise<User>} The validated user entity.
 	 * @throws {NotFoundException} If user is not found.
@@ -301,15 +289,11 @@ export class AuthService {
 		const memorySession = await this.cacheManager.get<string>(dto.sessionId);
 
 		if (!isValidTelegramData || !memorySession) {
-			throw new UnauthorizedException(
-				this.i18n.t('errors.auth.telegram.user-not-init', { lang: I18nContext.current()?.lang }),
-			);
+			throw new UnauthorizedException(this.i18n.t('errors.auth.telegram.user-not-init'));
 		}
 
 		if (memorySession !== dto.initData) {
-			throw new UnauthorizedException(
-				this.i18n.t('errors.auth.telegram.user-invalid', { lang: I18nContext.current()?.lang }),
-			);
+			throw new UnauthorizedException(this.i18n.t('errors.auth.telegram.user-invalid'));
 		}
 
 		const telegramId = Number(this.getTelegramIdFromInitData(memorySession));
@@ -325,7 +309,7 @@ export class AuthService {
 				telegramIdEncrypted,
 				telegramIdHash,
 			};
-			user = (await this.create(createDto)).data;
+			user = await this.create(createDto);
 		}
 		await this.cacheManager.del(dto.sessionId);
 		return user;
@@ -334,6 +318,7 @@ export class AuthService {
 	/**
 	 *  Get the Telegram UserId from initData.
 	 *
+	 * // TODO Create exceptions for this method
 	 * @param {string} initData Safe initData from telegram.
 	 * @returns {number} Telegram UserId.
 	 * @throws {UnauthorizedException} if not found user string or user id in initData
@@ -343,17 +328,13 @@ export class AuthService {
 		const userStr = params.get('user');
 
 		if (!userStr) {
-			throw new UnauthorizedException(
-				this.i18n.t('errors.auth.telegram.user-data-not-found', { lang: I18nContext.current()?.lang }),
-			);
+			throw new UnauthorizedException(this.i18n.t('errors.auth.telegram.user-data-not-found'));
 		}
 
 		const user = JSON.parse(userStr);
 
 		if (!user.id) {
-			throw new UnauthorizedException(
-				this.i18n.t('errors.auth.telegram.user-id-not-found', { lang: I18nContext.current()?.lang }),
-			);
+			throw new UnauthorizedException(this.i18n.t('errors.auth.telegram.user-id-not-found'));
 		}
 
 		return Number(user.id);
@@ -388,6 +369,7 @@ export class AuthService {
 	 * Validates the Telegram Web App initData.
 	 * Based on: https://core.telegram.org/bots/webapps#validating-data-from-web-apps
 	 *
+	 * // TODO Create exceptions for this method
 	 * @param {string} initData The initData string from Telegram.
 	 * @returns {Boolean} if the data is valid, false otherwise.
 	 * @throws {UnauthorizedException} if telegram token are invalid or older than 5 mins

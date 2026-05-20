@@ -1,0 +1,11 @@
+{
+	"users": {
+		"NOT_FOUND": "User with identifier {identifier} was not found"
+	},
+	"sessions": {
+		"NOT_FOUND": "Session with identifier {identifier} was not found"
+	},
+	"VALIDATION_FAILED": "Some fields are invalid.",
+	"NOT_FOUND": "That resource no longer exists or was moved.",
+	"INTERNAL_ERROR": "Something went wrong. Please try again."
+}

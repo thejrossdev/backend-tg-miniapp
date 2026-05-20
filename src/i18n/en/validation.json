@@ -1,0 +1,5 @@
+{
+	"isString": "Must be a string",
+	"minLength": "Must be longer than or equal to {value0} characters",
+	"isEmail": "Must be an email"
+}

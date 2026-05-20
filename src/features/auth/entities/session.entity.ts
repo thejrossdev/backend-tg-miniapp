@@ -1,5 +1,5 @@
 import { Base } from '@/common/entities';
-import { User } from '@/features/users/entities/user.entity';
+import { User } from '@/features/users/entities';
 import { Column, Entity, JoinColumn, ManyToOne, Relation } from 'typeorm';
 
 /**
