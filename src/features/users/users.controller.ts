@@ -91,7 +91,6 @@ export class UsersController {
 		},
 	})
 	@ApiBearerAuth('Bearer')
-	@Roles(Role.ADMIN)
 	@Get('me')
 	async fetchMe(@UserDec() userReq: User, @I18n() i18n: I18nContext): Promise<UserResponseMe> {
 		const user = await this.usersService.findOne(userReq.id);
