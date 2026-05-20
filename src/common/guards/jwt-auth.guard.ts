@@ -3,7 +3,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
+import { FastifyRequest } from 'fastify';
 import { IS_PUBLIC_KEY } from 'src/common/decorators';
 
 /**
@@ -61,10 +61,10 @@ export class JwtAuthGuard implements CanActivate {
 	 * Extracts the JWT token from the Authorization header.
 	 * Parses the Authorization header expecting "Bearer <token>" format and validates the authorization type.
 	 *
-	 * @param request - The Express request object containing headers
+	 * @param request - The Fastify request object containing headers
 	 * @returns The JWT token string if found and valid, undefined otherwise
 	 */
-	private extractTokenFromHeader(request: Request): string | undefined {
+	private extractTokenFromHeader(request: FastifyRequest): string | undefined {
 		const [type, token] = request.headers.authorization?.split(' ') ?? [];
 		return type === 'Bearer' ? token : undefined;
 	}

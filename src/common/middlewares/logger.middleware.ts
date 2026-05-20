@@ -1,6 +1,7 @@
+import { FastifyNext } from '@/common/types';
 import { concatStr } from '@/common/utils';
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { NextFunction, Request, Response } from 'express';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { Logger } from 'nestjs-pino';
 
 /**
@@ -20,13 +21,13 @@ export class LoggerMiddleware implements NestMiddleware {
 	/**
 	 * Logs the HTTP method and original URL of each incoming request.
 	 *
-	 * @param {Request} req - The Express request object.
-	 * @param {Response} res - The Express response object.
-	 * @param {NextFunction} next - The next middleware function in the chain.
+	 * @param {FastifyRequest} rep - The Fastify request object.
+	 * @param {FastifyReply} res - The Fastify response object.
+	 * @param {FastifyNext} next - The next middleware function in the chain.
 	 * @returns {void}
 	 */
-	use(req: Request, res: Response, next: NextFunction): void {
-		this.logger.log(concatStr([req.method, req.originalUrl]), 'Request');
+	use(rep: FastifyRequest, res: FastifyReply, next: FastifyNext): void {
+		this.logger.log(concatStr([rep.method, rep.originalUrl]), 'Request');
 		next();
 	}
 }

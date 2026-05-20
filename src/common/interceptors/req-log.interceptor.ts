@@ -1,5 +1,6 @@
 import { concatStr } from '@/common/utils';
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
@@ -32,8 +33,8 @@ export class ReqLogInterceptor implements NestInterceptor {
 	 * @returns {Observable<any>} Observable of the response stream.
 	 */
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-		const req = context.switchToHttp().getRequest();
-		const res = context.switchToHttp().getResponse();
+		const req = context.switchToHttp().getRequest<FastifyRequest>();
+		const rep = context.switchToHttp().getResponse<FastifyReply>();
 
 		// Log request method and URL before handling
 		this.logger.log(concatStr([req.method, req.originalUrl]));
@@ -42,7 +43,7 @@ export class ReqLogInterceptor implements NestInterceptor {
 			tap(() => {
 				// Optionally log response details after handling
 				// this.logger.log(
-				//   concatStr([req.method, req.originalUrl, res.statusCode]),
+				//   concatStr([req.method, req.originalUrl, rep.statusCode]),
 				// );
 			}),
 		);

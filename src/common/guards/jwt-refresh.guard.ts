@@ -1,10 +1,10 @@
 import { Env } from '@/common/utils';
-import { Session } from '@/features/auth/entities/session.entity';
+import { Session } from '@/features/auth/entities';
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Request } from 'express';
+import { FastifyRequest } from 'fastify';
 import { Repository } from 'typeorm';
 
 /**
@@ -70,10 +70,10 @@ export class JwtRefreshGuard implements CanActivate {
 	 * Extracts the JWT refresh token from the Authorization header.
 	 * Parses the Authorization header expecting "Bearer <token>" format and validates the authorization type.
 	 *
-	 * @param request - The Express request object containing headers
+	 * @param request - The Fastify request object containing headers
 	 * @returns The JWT refresh token string if found and valid, undefined otherwise
 	 */
-	private extractTokenFromHeader(request: Request): string | undefined {
+	private extractTokenFromHeader(request: FastifyRequest): string | undefined {
 		const [type, token] = request.headers.authorization?.split(' ') ?? [];
 		return type === 'Bearer' ? token : undefined;
 	}
