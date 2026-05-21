@@ -1,6 +1,13 @@
 import { User } from '@/features/users/entities';
+import { OmitType } from '@nestjs/swagger';
 
-export type UserSafe = Omit<
-	User,
-	'telegramIdEncrypted' | 'telegramIdHash' | 'sessions' | 'generateUserInfo' | 'setEntityName'
->;
+export class UserSafe extends OmitType(User, [
+	'telegramIdEncrypted',
+	'telegramIdHash',
+	'sessions',
+	'setEntityName',
+	'__entity',
+	'generateOrderNumber',
+	'orders',
+	'promoCodes',
+] as const) {}

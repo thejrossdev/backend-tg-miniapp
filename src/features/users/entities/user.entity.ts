@@ -1,7 +1,10 @@
 import { Base } from '@/common/entities';
 import { Role, RoleSupport } from '@/common/enums';
+import { getUniqueReferralCode } from '@/common/utils';
 import { Session } from '@/features/auth/entities';
-import { Column, Entity, Index, OneToMany, Relation } from 'typeorm';
+import { Order } from '@/features/orders/entities';
+import { PromoCode } from '@/features/promocodes/entities';
+import { BeforeInsert, Column, Entity, Index, OneToMany, Relation } from 'typeorm';
 
 /**
  * Entity representing a user account.
@@ -48,6 +51,17 @@ export class User extends Base {
 	})
 	language: string;
 
+	/**
+	 * Referral code for invite.
+	 * @type {string}
+	 */
+	@Column({
+		type: 'varchar',
+		length: 34,
+		nullable: true,
+	})
+	referralCode: string;
+
 	// =========== BOOLEANS ===========
 
 	/**
@@ -83,4 +97,30 @@ export class User extends Base {
 		cascade: true,
 	})
 	sessions: Relation<Session[]>;
+
+	/**
+	 * Promo codes associated with the user.
+	 * @type {Relation<Session[]>}
+	 */
+	@OneToMany(() => PromoCode, (promoCode) => promoCode.createdBy, {
+		cascade: true,
+	})
+	promoCodes: Relation<PromoCode[]>;
+
+	/**
+	 * Orders associated with the user.
+	 * @type {Relation<Order[]>}
+	 */
+	@OneToMany(() => Order, (order) => order.user)
+	orders: Relation<Order[]>;
+
+	/**
+	 * Generate referral code before insert.
+	 */
+	@BeforeInsert()
+	async generateOrderNumber(): Promise<void> {
+		if (!this.referralCode) {
+			this.referralCode = getUniqueReferralCode();
+		}
+	}
 }

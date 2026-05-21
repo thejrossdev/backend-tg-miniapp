@@ -1,7 +1,5 @@
 import { Roles, SuccessMessage, User as UserDec } from '@/common/decorators';
 import { Role } from '@/common/enums';
-import { GI18nService } from '@/common/services';
-import { SuccessResponse } from '@/common/types';
 import { FileService } from '@/features/file/file.service';
 import { User } from '@/features/users/entities';
 import { UserExceptionNotFound } from '@/features/users/exceptions';
@@ -22,12 +20,10 @@ export class UsersController {
 	/**
 	 * Creates an instance of UsersController.
 	 *
-	 * @param {GI18nService} i18n - Service for translating.
 	 * @param {UsersService} usersService - Service for user-related operations.
 	 * @param {FileService} fileService - Service for file-related operations.
 	 */
 	constructor(
-		private readonly i18n: GI18nService,
 		private readonly usersService: UsersService,
 		private readonly fileService: FileService,
 	) {}
@@ -38,7 +34,7 @@ export class UsersController {
 	 * @returns {Promise<UserSafe[]>} An object containing a message and an array of user data.
 	 */
 	@ApiOkResponse({
-		type: SuccessResponse<UserSafe[]>,
+		type: UserSafe,
 	})
 	@Get()
 	@Roles(Role.ADMIN)
@@ -60,7 +56,7 @@ export class UsersController {
 		name: 'identifier',
 	})
 	@ApiOkResponse({
-		type: SuccessResponse<UserSafe>,
+		type: UserSafe,
 	})
 	@ApiNotFoundResponse({
 		type: UserExceptionNotFound,
@@ -87,7 +83,7 @@ export class UsersController {
 		name: 'identifier',
 	})
 	@ApiOkResponse({
-		type: SuccessResponse<UserSafe>,
+		type: UserSafe,
 	})
 	@ApiNotFoundResponse({
 		type: UserExceptionNotFound,

@@ -1,5 +1,6 @@
+import { Optional } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateUserDto {
 	@ApiProperty({
@@ -16,4 +17,16 @@ export class CreateUserDto {
 	})
 	@IsString()
 	telegramIdHash: string;
+
+	@ApiProperty({
+		description: 'Referral code who invite',
+		example: 'rejolwprxhie3uldz6qrlffb8xlsiaa7je',
+		required: false,
+		minLength: 34,
+	})
+	@IsString()
+	@MinLength(34)
+	@MaxLength(34)
+	@Optional()
+	referrerCode?: string;
 }

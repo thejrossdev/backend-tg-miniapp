@@ -265,6 +265,10 @@ export class AuthService {
 				const user = manager.create(User, createUserDto);
 				await manager.insert(User, user);
 
+				if (createUserDto.referrerCode) {
+					// TODO call create referral in service
+				}
+
 				return { user };
 			});
 
@@ -308,6 +312,7 @@ export class AuthService {
 			const createDto: CreateUserDto = {
 				telegramIdEncrypted,
 				telegramIdHash,
+				referrerCode: dto.referrerCode,
 			};
 			user = await this.create(createDto);
 		}
