@@ -58,7 +58,7 @@ make gen-api
 or
 
 ```bash
-pnpm swagger-typescript-api generate -p http://localhost:3000/api-json -o ./src/generated -n api.generated.ts --extract-enums
+pnpm swagger-typescript-api generate -p http://localhost:3000/api-json -o ./src/generated -n api.generated.ts --extract-enums --axios
 ```
 
 ---
