@@ -34,6 +34,7 @@ or
 openssl rand -hex 32
 ```
 
+---
 **Convert dependency graph from `mermaid` to `svg`**  
 _Need installed [mermaid-cli](https://github.com/mermaid-js/mermaid-cli)_
 
@@ -45,6 +46,19 @@ or
 
 ```bash
 mmdc -i ./docs/assets/deps.mermaid -o ./docs/assets/deps.svg
+```
+
+---
+**Generate the API Client for Fetch or Axios from an OpenAPI Specification**
+
+```bash
+make gen-api
+```
+
+or
+
+```bash
+pnpm swagger-typescript-api generate -p http://localhost:3000/api-json -o ./src/generated -n api.generated.ts --extract-enums
 ```
 
 ---

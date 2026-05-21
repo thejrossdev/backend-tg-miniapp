@@ -10,5 +10,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 export const swagger = async (app: NestFastifyApplication): Promise<void> => {
 	const swaggerConfig = new DocumentBuilder().setTitle('Turbo repo').addBearerAuth().build();
 	const document = SwaggerModule.createDocument(app, swaggerConfig);
-	SwaggerModule.setup('api-docs', app, document);
+	SwaggerModule.setup('api-docs', app, document, {
+		jsonDocumentUrl: '/api-json',
+	});
 };
