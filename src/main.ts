@@ -1,7 +1,7 @@
-import {AppModule} from '@/app.module';
-import {bootstrap} from '@/bootstrap';
-import {NestFactory} from '@nestjs/core';
-import {FastifyAdapter, NestFastifyApplication} from '@nestjs/platform-fastify';
+import { AppModule } from '@/app.module';
+import { bootstrap } from '@/bootstrap';
+import { NestFactory } from '@nestjs/core';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 
 /**
  * Main entry point to bootstrap the NestJS Fastify application.

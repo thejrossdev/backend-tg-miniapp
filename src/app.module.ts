@@ -7,14 +7,17 @@ import { ValidatorPipe } from '@/common/pipes';
 import { GI18nService } from '@/common/services';
 import { validateEnv } from '@/common/utils';
 import { DatabaseModule } from '@/database';
+import { BotModule } from '@/features/bot/BotModule';
 import { FileModule } from '@/features/file/file.module';
 import { UsersModule } from '@/features/users/users.module';
+import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { bootstrap as globalAgentBootstrap } from 'global-agent';
 import { AcceptLanguageResolver, HeaderResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import * as path from 'node:path';
 import { join } from 'path';
@@ -56,6 +59,13 @@ import { HealthModule } from './features/health/health.module';
 		},
 	],
 	imports: [
+		HttpModule.registerAsync({
+			useFactory: (configService: ConfigService) => {
+				if (configService.get('HTTP_PROXY', '')) globalAgentBootstrap();
+				return {};
+			},
+			inject: [ConfigService],
+		}),
 		JwtModule.register({
 			global: true,
 		}),
@@ -82,6 +92,7 @@ import { HealthModule } from './features/health/health.module';
 			],
 			inject: [ConfigService],
 		}),
+		BotModule,
 		LoggerModule,
 		ThrottleModule,
 		DatabaseModule,
