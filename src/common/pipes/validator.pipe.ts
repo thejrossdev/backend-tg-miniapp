@@ -45,11 +45,10 @@ export class ValidatorPipe extends ValidationPipe {
 
 		for (const err of errors) {
 			const path = parentPath ? `${parentPath}.${err.property}` : err.property;
-
 			if (err.constraints) {
-				for (const key of Object.keys(err.constraints)) {
+				for (const [key, value] of Object.entries(err.constraints)) {
 					const translationKey = `validation.${key}` as I18nPath;
-					const args = this.transformValueToArgs(err.value);
+					const args = this.transformValueToArgs(value);
 					const issue = this.i18n.t(translationKey, {
 						args,
 					});

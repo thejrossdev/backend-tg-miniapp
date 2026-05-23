@@ -10,4 +10,5 @@ export enum ErrorCode {
 	'CONFLICT' = 'CONFLICT', // user must resolve a state mismatch (retry with new data)
 	'RATE_LIMITED' = 'RATE_LIMITED', // user should slow down / wait
 	'UPSTREAM_UNAVAILABLE' = 'UPSTREAM_UNAVAILABLE ', // try again later (and tell them)
+	'UNAUTHORIZED' = 'UNAUTHORIZED',
 }
