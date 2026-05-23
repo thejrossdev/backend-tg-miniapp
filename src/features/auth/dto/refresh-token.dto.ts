@@ -13,4 +13,8 @@ export class RefreshTokenDto {
 		message: 'Session token must be a string',
 	})
 	session_token: string;
+
+	@ApiProperty()
+	@IsString()
+	refresh_token: string;
 }

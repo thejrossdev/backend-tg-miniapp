@@ -1,6 +1,7 @@
 import { Env } from '@/common/utils';
 import { spelunker } from '@/spelunker';
 import { swagger } from '@/swagger';
+import { fastifyCookie } from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
@@ -71,6 +72,11 @@ export const bootstrap = async (app: NestFastifyApplication): Promise<void> => {
 
 	// Register Fastify multipart plugin for file uploads
 	await app.register(fastifyMultipart);
+
+	// Register fastify cookie plugin for cookies
+	await app.register(fastifyCookie, {
+		secret: configService.get<string>('COOKIE_SECRET'),
+	});
 
 	// Start the application and listen on the configured port and host
 	await app.listen(configService.get('PORT')!, '0.0.0.0', () => {

@@ -33,6 +33,7 @@
 	},
 	"dependencies": {
 		"@blazity/nest-file-fastify": "^1.0.0",
+		"@fastify/cookie": "^11.0.2",
 		"@fastify/helmet": "^13.0.2",
 		"@fastify/multipart": "^10.0.0",
 		"@fastify/static": "^9.1.3",

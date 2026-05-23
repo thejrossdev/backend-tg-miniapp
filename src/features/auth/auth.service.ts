@@ -1,14 +1,16 @@
 import { TELEGRAM_SESSION_TTL } from '@/common/constants';
+import { AUTH_REFRESH_TOKEN_NAME, AUTH_SESSION_NAME, AUTH_USER_ID_NAME } from '@/common/constants/auth';
 import { GI18nService, TelegramService } from '@/common/services';
-import { Env, generateRefreshTime } from '@/common/utils';
+import { CookieService } from '@/common/services/cookie.service';
+import { Env, generateRefreshTime, generateRefreshTimeDate } from '@/common/utils';
 import { RefreshTokenDto, SignInUserDto, SignOutAllDeviceUserDto, SignOutUserDto } from '@/features/auth/dto';
 import { Session } from '@/features/auth/entities';
 import { SessionExceptionNotFound, TelegramExceptionInvalid } from '@/features/auth/exceptions';
 import { AuthExceptionNotInit } from '@/features/auth/exceptions/auth-not-init.exception';
 import {
 	AuthUserInit,
-	AuthUserSessionAccessTokens,
-	AuthUserSignedIn,
+	AuthUserSessionAccessTokensSafe,
+	AuthUserSignedInSafe,
 	AuthUserTokens,
 	SessionSafe,
 } from '@/features/auth/types';
@@ -23,6 +25,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cache } from 'cache-manager';
 import { randomUUID } from 'crypto';
+import { FastifyReply } from 'fastify';
 import { Logger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 
@@ -34,6 +37,7 @@ export class AuthService {
 	/**
 	 * Creates an instance of AuthService.
 	 *
+	 * @param {CookieService} cookieService - Cookie service for operations with cookies.
 	 * @param {JwtService} jwtService - JWT service for token operations.
 	 * @param {TelegramService} telegramService - Telegram service for telegram data hashing and encode/decode operations.
 	 * @param {UsersService} usersService - Service for users operations.
@@ -45,6 +49,7 @@ export class AuthService {
 	 * @param {Logger} logger - Logger instance.
 	 */
 	constructor(
+		private readonly cookieService: CookieService,
 		private readonly jwtService: JwtService,
 		private readonly telegramService: TelegramService,
 		private readonly usersService: UsersService,
@@ -71,17 +76,18 @@ export class AuthService {
 		await this.cacheManager.set(sessionId, dto.initData, TELEGRAM_SESSION_TTL);
 
 		return {
-			data: sessionId,
+			sessionId,
 		};
 	}
 
 	/**
 	 * Signs in a user account.
 	 *
+	 * @param {FastifyReply} rep - Fastify reply
 	 * @param {SignInUserDto} dto - Sign-in DTO.
-	 * @returns {Promise<AuthUserSignedIn} Login response with user data and tokens.
+	 * @returns {Promise<AuthUserSignedInSafe>} Login response with user data and tokens.
 	 */
-	async signIn(dto: SignInUserDto): Promise<AuthUserSignedIn> {
+	async signIn(rep: FastifyReply, dto: SignInUserDto): Promise<AuthUserSignedInSafe> {
 		const user = await this.validateUser(dto);
 		const tokens = await this.generateTokens(user);
 		const sessionData = this.SessionRepository.create({
@@ -96,36 +102,57 @@ export class AuthService {
 		});
 		const session = await this.SessionRepository.save(sessionData);
 
-		const session_refresh_time = await generateRefreshTime();
+		const sessionRefreshDays = Number(
+			this.config.getOrThrow<string>('REFRESH_TOKEN_EXPIRATION').replaceAll('d', ''),
+		);
+		const session_refresh_time = await generateRefreshTime(sessionRefreshDays);
+		this.cookieService.set(
+			rep,
+			AUTH_REFRESH_TOKEN_NAME,
+			tokens.refresh_token,
+			await generateRefreshTimeDate(sessionRefreshDays),
+		);
+		this.cookieService.setInf(rep, AUTH_SESSION_NAME, session.id);
+		this.cookieService.setInf(rep, AUTH_USER_ID_NAME, user.id);
+		const { refresh_token, ...safeTokens } = tokens;
+
 		return {
-			data: user,
-			tokens: { ...tokens, session_token: session.id, session_refresh_time },
+			user: this.usersService.getSafeUser(user),
+			tokens: { ...safeTokens, session_token: session.id, session_refresh_time },
 		};
 	}
 
 	/**
 	 * Signs out the user from the current session.
 	 *
+	 * @param {FastifyReply} rep - Fastify reply
 	 * @param {SignOutUserDto} dto - Sign out DTO.
 	 * @returns {Promise<void>}
 	 * @throws {SessionExceptionNotFound} If session is not found.
 	 */
-	async signOut(dto: SignOutUserDto): Promise<void> {
+	async signOut(rep: FastifyReply, dto: SignOutUserDto): Promise<void> {
 		const session = await this.SessionRepository.findOne({
 			where: { id: dto.session_token },
 		});
 		if (!session) throw new SessionExceptionNotFound(dto.session_token, this.i18n);
 		await this.SessionRepository.remove(session);
+		this.cookieService.clear(rep, AUTH_REFRESH_TOKEN_NAME);
+		this.cookieService.clear(rep, AUTH_SESSION_NAME);
+		this.cookieService.clear(rep, AUTH_USER_ID_NAME);
 	}
 
 	/**
 	 * Signs out the user from all devices by user ID.
 	 *
+	 * @param {FastifyReply} rep - Fastify reply
 	 * @param {SignOutAllDeviceUserDto} dto - Sign out all devices DTO.
 	 * @returns {Promise<void>}
 	 */
-	async signOutAllDevices(dto: SignOutAllDeviceUserDto): Promise<void> {
+	async signOutAllDevices(rep: FastifyReply, dto: SignOutAllDeviceUserDto): Promise<void> {
 		await this.SessionRepository.delete({ user_id: dto.userId });
+		this.cookieService.clear(rep, AUTH_REFRESH_TOKEN_NAME);
+		this.cookieService.clear(rep, AUTH_SESSION_NAME);
+		this.cookieService.clear(rep, AUTH_USER_ID_NAME);
 	}
 
 	/**
@@ -164,31 +191,55 @@ export class AuthService {
 	/**
 	 * Refreshes the user's access token.
 	 *
+	 * @param {FastifyReply} rep - Fastify reply
 	 * @param {RefreshTokenDto} dto - Refresh token DTO.
-	 * @returns {Promise<AuthUserSessionAccessTokens>} New tokens and session info.
+	 * @returns {Promise<AuthUserSessionAccessTokensSafe>} New tokens and session info.
 	 * @throws {SessionExceptionNotFound} If user or session is not found.
 	 * @throws {UserExceptionNotFound} If user is not found.
 	 */
-	async refreshToken(dto: RefreshTokenDto): Promise<AuthUserSessionAccessTokens> {
+	async refreshToken(rep: FastifyReply, dto: RefreshTokenDto): Promise<AuthUserSessionAccessTokensSafe> {
+		// User
 		const user = await this.UserRepository.findOne({
 			where: { id: dto.user_id },
 		});
 		if (!user) throw new UserExceptionNotFound(dto.user_id, this.i18n);
-		const { access_token, refresh_token } = await this.generateTokens(user);
+
+		// Session
 		const session = await this.SessionRepository.findOne({
 			where: {
 				id: dto.session_token,
 				user_id: dto.user_id,
+				refresh_token: dto.refresh_token,
 			},
 		});
+
 		if (!session) throw new SessionExceptionNotFound(dto.session_token, this.i18n);
+
+		// Refresh token
+		const { access_token, refresh_token } = await this.generateTokens(user);
 		session.refresh_token = refresh_token;
-		const access_token_refresh_time = await generateRefreshTime();
+
+		// Access token
+		const sessionAccessDays = Number(this.config.getOrThrow<string>('ACCESS_TOKEN_EXPIRATION').replaceAll('d', ''));
+		const access_token_refresh_time = await generateRefreshTime(sessionAccessDays);
 		await this.SessionRepository.save(session);
+
+		// Cookie
+		const sessionRefreshDays = Number(
+			this.config.getOrThrow<string>('REFRESH_TOKEN_EXPIRATION').replaceAll('d', ''),
+		);
+		this.cookieService.set(
+			rep,
+			AUTH_REFRESH_TOKEN_NAME,
+			session.refresh_token,
+			await generateRefreshTimeDate(sessionRefreshDays),
+		);
+		this.cookieService.setInf(rep, AUTH_SESSION_NAME, session.id);
+		this.cookieService.setInf(rep, AUTH_USER_ID_NAME, user.id);
+
 		return {
 			access_token,
-			refresh_token,
-			session_token: dto.session_token,
+			session_token: session.id,
 			access_token_refresh_time,
 		};
 	}

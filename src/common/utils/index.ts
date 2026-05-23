@@ -31,10 +31,13 @@ export const getRandomInt = (min: number, max: number) => {
 	return Math.floor(Math.random() * (maxFloored - minCelled) + minCelled); // The maximum is exclusive and the minimum is inclusive
 };
 
-export const generateRefreshTime = async (day = 3): Promise<string> => {
+export const generateRefreshTime = async (day: number = 3): Promise<string> => {
+	return (await generateRefreshTimeDate(day)).toISOString();
+};
+
+export const generateRefreshTimeDate = async (day: number = 3): Promise<Date> => {
 	const threeDays = day * 24 * 60 * 60 * 1000; // 3 days in milliseconds
-	const refreshTime = new Date(Date.now() + threeDays);
-	return refreshTime.toISOString();
+	return new Date(Date.now() + threeDays);
 };
 
 export * from './amazon-s3';

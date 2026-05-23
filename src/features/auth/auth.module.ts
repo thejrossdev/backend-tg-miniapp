@@ -1,4 +1,5 @@
 import { GI18nService, TelegramService } from '@/common/services';
+import { CookieService } from '@/common/services/cookie.service';
 import { TransactionService } from '@/database';
 import { Session } from '@/features/auth/entities';
 import { User } from '@/features/users/entities';
@@ -11,6 +12,6 @@ import { AuthService } from './auth.service';
 @Module({
 	imports: [TypeOrmModule.forFeature([User, Session])],
 	controllers: [AuthController],
-	providers: [AuthService, TelegramService, TransactionService, UsersService, GI18nService],
+	providers: [AuthService, TelegramService, TransactionService, UsersService, GI18nService, CookieService],
 })
 export class AuthModule {}

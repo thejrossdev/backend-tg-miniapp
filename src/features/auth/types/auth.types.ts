@@ -1,10 +1,9 @@
 import { BaseSuccessResponse } from '@/common/types';
-import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { UserSafe } from '@/features/users/types';
-import { User } from '@/features/users/entities';
+import { ApiProperty, IntersectionType, OmitType } from '@nestjs/swagger';
 
 /**
- * Initial authentication data structure.
+ * Initial authentication data structure containing temporary session information.
  */
 export class AuthUserInit {
 	@ApiProperty({
@@ -13,16 +12,15 @@ export class AuthUserInit {
 		type: String,
 		required: true,
 	})
-	data: string;
+	sessionId: string;
 }
-
 /**
- * Initial authentication response structure.
+ * Initial authentication response structure combining success response with authentication data.
  */
 export class AuthResponseUserInit extends IntersectionType(BaseSuccessResponse, AuthUserInit) {}
 
 /**
- * Basic authentication tokens (access and refresh).
+ * Basic authentication tokens containing JWT access and refresh tokens.
  */
 export class AuthUserTokens {
 	/**
@@ -53,60 +51,87 @@ export class AuthUserTokens {
 }
 
 /**
- * Basic authentication response tokens (access and refresh).
+ * Basic authentication response tokens combining success response with JWT tokens.
  */
 export class AuthResponseUserTokens extends IntersectionType(BaseSuccessResponse, AuthUserTokens) {}
 
 /**
- * Extended authentication tokens with session token.
+ * Extended authentication tokens with additional session token for enhanced security.
  */
 export class AuthUserSessionTokens extends AuthUserTokens {
+	/**
+	 * Session token for maintaining user session state
+	 */
 	@ApiProperty()
 	session_token: string;
 }
 
 /**
- * Session tokens with refresh time information.
+ * Session tokens with refresh time information for session management.
  */
 export class AuthUserSessionRefreshTokens extends AuthUserSessionTokens {
+	/**
+	 * Timestamp indicating when the session should be refreshed
+	 */
 	@ApiProperty()
 	session_refresh_time: string;
 }
 
 /**
- * Session tokens with access token refresh time information.
+ * Session tokens with access token refresh time for automatic token renewal.
  */
-export type AuthUserSessionAccessTokens = AuthUserSessionTokens & {
+export class AuthUserSessionAccessTokens extends AuthUserSessionTokens {
+	/**
+	 * Timestamp indicating when the access token should be refreshed
+	 */
+	@ApiProperty()
 	access_token_refresh_time: string;
-};
+}
 
 /**
- * Complete user authentication response with full user data.
+ * Safe version of session access tokens with sensitive refresh token removed.
  */
-export class AuthUserSignedIn {
-	@ApiProperty({
-		type: User,
-	})
-	data: User;
+export class AuthUserSessionAccessTokensSafe extends OmitType(AuthUserSessionAccessTokens, [
+	'refresh_token',
+] as const) {}
 
+/**
+ * Response structure for safe session access tokens.
+ */
+export class AuthResponseUserSessionAccessTokensSafe extends IntersectionType(BaseSuccessResponse) {
 	@ApiProperty({
-		type: AuthUserSessionRefreshTokens,
+		type: AuthUserSessionAccessTokensSafe,
 	})
-	tokens: AuthUserSessionRefreshTokens;
+	data: AuthUserSessionAccessTokensSafe;
 }
+
+/**
+ * Complete user authentication response containing full user data and session tokens.
+ */
+class AuthUserSessionRefreshTokensSafe extends OmitType(AuthUserSessionRefreshTokens, ['refresh_token'] as const) {}
 
 /**
  * Complete user authentication response with safe user data (sensitive fields removed).
  */
 export class AuthUserSignedInSafe {
+	/**
+	 * Safe user object with sensitive information removed
+	 */
 	@ApiProperty({
 		type: UserSafe,
 	})
-	data: UserSafe;
+	user: UserSafe;
 
+	/**
+	 * Safe session tokens with sensitive refresh token removed
+	 */
 	@ApiProperty({
-		type: AuthUserSessionRefreshTokens,
+		type: AuthUserSessionRefreshTokensSafe,
 	})
-	tokens: AuthUserSessionRefreshTokens;
+	tokens: AuthUserSessionRefreshTokensSafe;
 }
+
+/**
+ * Response structure for safe user authentication data.
+ */
 export class AuthResponseUserSignedInSafe extends IntersectionType(BaseSuccessResponse, AuthUserSignedInSafe) {}

@@ -7,6 +7,8 @@ export const EnvSchema = z.object({
 	APP_NAME: z.string(),
 	APP_URL: z.url(),
 	HOST: z.string(),
+	COOKIE_DOMAIN: z.string(),
+	COOKIE_SECRET: z.string().min(64),
 	TELEGRAM_BOT_TOKEN: z.string(),
 	TELEGRAM_SECRET: z.string().min(64),
 	NODE_ENV: z.enum(['development', 'production', 'test', 'provision']).default('development'),

@@ -1,23 +1,20 @@
 import { Public, Roles, SuccessMessage, User as UserDec } from '@/common/decorators';
 import { Role } from '@/common/enums';
-import { JwtRefreshGuard } from '@/common/guards';
 import { BadResponse, InternalResponse, SuccessResponse } from '@/common/types';
-import { RefreshTokenDto, SignInUserDto, SignOutAllDeviceUserDto, SignOutUserDto } from '@/features/auth/dto';
+import { SignInUserDto, SignOutAllDeviceUserDto, SignOutUserDto } from '@/features/auth/dto';
 import { Session } from '@/features/auth/entities';
 import {
 	AuthResponseUserInit,
 	AuthResponseUserSession,
 	AuthResponseUserSessions,
 	AuthResponseUserSignedInSafe,
-	AuthResponseUserTokens,
 	AuthUserInit,
-	AuthUserSessionAccessTokens,
 	AuthUserSignedInSafe,
 	SessionSafe,
 } from '@/features/auth/types';
 import { UserDtoDelete, UserDtoInit } from '@/features/users/dto';
 import { User } from '@/features/users/entities';
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, Res } from '@nestjs/common';
 import {
 	ApiBadRequestResponse,
 	ApiBearerAuth,
@@ -28,6 +25,7 @@ import {
 	ApiProperty,
 	ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 
 /**
@@ -74,6 +72,8 @@ export class AuthController {
 	/**
 	 * Signs in a user.
 	 *
+	 * @param {FastifyRequest} req - Fastify request
+	 * @param {FastifyReply} rep - Fastify reply
 	 * @param {SignInUserDto} signInUserDto - User credentials for sign in.
 	 * @returns {Promise<AuthUserSignedInSafe >} Sign-in response with tokens and user data.
 	 */
@@ -99,12 +99,14 @@ export class AuthController {
 	@Public()
 	@SuccessMessage('success.auth.sign-in')
 	@Post('sign-in')
-	async init(@Body() signInUserDto: SignInUserDto): Promise<AuthUserSignedInSafe> {
-		const data = await this.authService.signIn(signInUserDto);
-		const { telegramIdEncrypted, telegramIdHash, sessions, ...result } = data.data;
-
+	async signIn(
+		@Req() req: FastifyRequest,
+		@Res({ passthrough: true }) rep: FastifyReply,
+		@Body() signInUserDto: SignInUserDto,
+	): Promise<AuthUserSignedInSafe> {
+		const data = await this.authService.signIn(rep, signInUserDto);
 		return {
-			data: result,
+			user: data.user,
 			tokens: data.tokens,
 		};
 	}
@@ -112,6 +114,8 @@ export class AuthController {
 	/**
 	 * Signs out the user from the current session.
 	 *
+	 * @param {FastifyRequest} req - Fastify request
+	 * @param {FastifyReply} rep - Fastify reply
 	 * @param {SignOutUserDto} signOutUserDto - Data for signing out.
 	 * @returns {Promise<SuccessResponse>} Response message.
 	 * @throws {SessionExceptionNotFound} If session is not found.
@@ -134,13 +138,19 @@ export class AuthController {
 	@ApiBearerAuth('Bearer')
 	@SuccessMessage('success.auth.sign-out')
 	@Post('sign-out')
-	async signOut(@Body() signOutUserDto: SignOutUserDto): Promise<void> {
-		await this.authService.signOut(signOutUserDto);
+	async signOut(
+		@Req() req: FastifyRequest,
+		@Res({ passthrough: true }) rep: FastifyReply,
+		@Body() signOutUserDto: SignOutUserDto,
+	): Promise<void> {
+		await this.authService.signOut(rep, signOutUserDto);
 	}
 
 	/**
 	 * Signs out the user from all devices.
 	 *
+	 * @param {FastifyRequest} req - Fastify request
+	 * @param {FastifyReply} rep - Fastify reply
 	 * @param {SignOutAllDeviceUserDto} dto - Data for signing out from all devices.
 	 * @returns {Promise<void>} Response message.
 	 */
@@ -158,8 +168,12 @@ export class AuthController {
 	@ApiBearerAuth('Bearer')
 	@SuccessMessage('success.auth.sign-out-all')
 	@Post('sign-out-allDevices')
-	async signOutAllDevices(@Body() dto: SignOutAllDeviceUserDto): Promise<void> {
-		await this.authService.signOutAllDevices(dto);
+	async signOutAllDevices(
+		@Req() req: FastifyRequest,
+		@Res({ passthrough: true }) rep: FastifyReply,
+		@Body() dto: SignOutAllDeviceUserDto,
+	): Promise<void> {
+		await this.authService.signOutAllDevices(rep, dto);
 	}
 
 	/**
@@ -240,44 +254,50 @@ export class AuthController {
 		return this.authService.getSafeSession(await this.authService.getSession(id));
 	}
 
-	/**
-	 * Refreshes the access token using a refresh token.
-	 *
-	 * @param {RefreshTokenDto} dto - Data for refreshing the token.
-	 * @returns {Promise<AuthUserSessionAccessTokens>} Refresh token response.
-	 */
-	@ApiBody({
-		type: RefreshTokenDto,
-		description: 'Data for refreshing the token',
-	})
-	@ApiOkResponse({
-		type: AuthResponseUserTokens,
-	})
-	@ApiBadRequestResponse({
-		description: 'Validation failed',
-		type: BadResponse,
-	})
-	@ApiNotFoundResponse({
-		description: 'User not found',
-		type: InternalResponse,
-	})
-	@ApiNotFoundResponse({
-		description: 'Session not found',
-		type: InternalResponse,
-	})
-	@ApiBearerAuth('Bearer')
-	@SuccessMessage('success.auth.refresh')
-	@UseGuards(JwtRefreshGuard)
-	@Patch('refresh-token')
-	async refreshToken(@Body() dto: RefreshTokenDto): Promise<AuthUserSessionAccessTokens> {
-		const data = await this.authService.refreshToken(dto);
-		return {
-			access_token: data.access_token,
-			refresh_token: data.refresh_token,
-			access_token_refresh_time: data.access_token_refresh_time,
-			session_token: data.session_token,
-		};
-	}
+	// Now refresh working with JwtAuthGuard via cookies
+	// /**
+	//  * Refreshes the access token using a refresh token.
+	//  *
+	//  * @param {FastifyRequest} req - Fastify request
+	//  * @param {FastifyReply} rep - Fastify reply
+	//  * @param {RefreshTokenDto} dto - Data for refreshing the token.
+	//  * @returns {Promise<AuthUserSessionAccessTokensSafe>} Refresh token response.
+	//  */
+	// @ApiBody({
+	// 	type: RefreshTokenDto,
+	// 	description: 'Data for refreshing the token',
+	// })
+	// @ApiOkResponse({
+	// 	type: AuthResponseUserSessionAccessTokensSafe,
+	// })
+	// @ApiBadRequestResponse({
+	// 	description: 'Validation failed',
+	// 	type: BadResponse,
+	// })
+	// @ApiNotFoundResponse({
+	// 	description: 'User not found',
+	// 	type: InternalResponse,
+	// })
+	// @ApiNotFoundResponse({
+	// 	description: 'Session not found',
+	// 	type: InternalResponse,
+	// })
+	// @ApiBearerAuth('Bearer')
+	// @SuccessMessage('success.auth.refresh')
+	// @UseGuards(JwtRefreshGuard)
+	// @Patch('refresh-token')
+	// async refreshToken(
+	// 	@Req() req: FastifyRequest,
+	// 	@Res({ passthrough: true }) rep: FastifyReply,
+	// 	@Body() dto: RefreshTokenDto,
+	// ): Promise<AuthUserSessionAccessTokensSafe> {
+	// 	const data = await this.authService.refreshToken(rep, dto);
+	// 	return {
+	// 		access_token: data.access_token,
+	// 		access_token_refresh_time: data.access_token_refresh_time,
+	// 		session_token: data.session_token,
+	// 	};
+	// }
 
 	/**
 	 * Deletes the user account.

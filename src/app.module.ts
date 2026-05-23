@@ -4,12 +4,17 @@ import { JwtAuthGuard, RolesGuard } from '@/common/guards';
 import { SuccessInterceptor } from '@/common/interceptors';
 import { LoggerModule, ThrottleModule } from '@/common/modules';
 import { ValidatorPipe } from '@/common/pipes';
-import { GI18nService } from '@/common/services';
+import { GI18nService, TelegramService } from '@/common/services';
+import { CookieService } from '@/common/services/cookie.service';
 import { validateEnv } from '@/common/utils';
-import { DatabaseModule } from '@/database';
+import { DatabaseModule, TransactionService } from '@/database';
+import { AuthService } from '@/features/auth/auth.service';
+import { Session } from '@/features/auth/entities';
 import { BotModule } from '@/features/bot/BotModule';
 import { FileModule } from '@/features/file/file.module';
+import { User } from '@/features/users/entities';
 import { UsersModule } from '@/features/users/users.module';
+import { UsersService } from '@/features/users/users.service';
 import { HttpModule } from '@nestjs/axios';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
@@ -17,6 +22,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { bootstrap as globalAgentBootstrap } from 'global-agent';
 import { AcceptLanguageResolver, HeaderResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import * as path from 'node:path';
@@ -33,6 +39,13 @@ import { HealthModule } from './features/health/health.module';
 	providers: [
 		GI18nService,
 		SuccessResponseFactory,
+		JwtAuthGuard,
+		AuthService,
+		UsersService,
+		TransactionService,
+		CookieService,
+		TelegramService,
+		GI18nService,
 		{
 			provide: APP_INTERCEPTOR,
 			useClass: SuccessInterceptor,
@@ -56,6 +69,10 @@ import { HealthModule } from './features/health/health.module';
 		{
 			provide: APP_GUARD,
 			useClass: ThrottlerGuard,
+		},
+		{
+			provide: APP_GUARD,
+			useClass: JwtAuthGuard,
 		},
 	],
 	imports: [
@@ -92,6 +109,7 @@ import { HealthModule } from './features/health/health.module';
 			],
 			inject: [ConfigService],
 		}),
+		TypeOrmModule.forFeature([User, Session]),
 		BotModule,
 		LoggerModule,
 		ThrottleModule,
