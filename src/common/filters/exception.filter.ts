@@ -1,4 +1,5 @@
 import { ErrorCode } from '@/common/enums';
+import { DomainException } from '@/common/exceptions';
 import { GI18nService } from '@/common/services';
 import { BadResponse } from '@/common/types';
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
@@ -30,9 +31,11 @@ export class RequestExceptionFilter implements ExceptionFilter {
 
 		// Default fallback
 		let status = HttpStatus.INTERNAL_SERVER_ERROR;
-		let code = ErrorCode.INTERNAL_ERROR;
+		let code: string = ErrorCode.INTERNAL_ERROR;
 		let message = this.i18n.t('exceptions.INTERNAL_ERROR');
 		let details: unknown = undefined;
+
+		console.error('EXCEEEE', exception);
 
 		if (exception instanceof HttpException) {
 			status = exception.getStatus();
@@ -57,6 +60,12 @@ export class RequestExceptionFilter implements ExceptionFilter {
 			if (status === 401 && code === ErrorCode.INTERNAL_ERROR) {
 				code = ErrorCode.UNAUTHORIZED;
 			}
+		}
+
+		if (exception instanceof DomainException) {
+			message = exception.message;
+			code = exception.code;
+			status = exception.statusCode;
 		}
 
 		const response: BadResponse = {

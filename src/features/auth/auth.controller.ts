@@ -13,6 +13,7 @@ import {
 	AuthUserInit,
 	AuthUserSessionAccessTokens,
 	AuthUserSignedInSafe,
+	SessionSafe,
 } from '@/features/auth/types';
 import { UserDtoDelete, UserDtoInit } from '@/features/users/dto';
 import { User } from '@/features/users/entities';
@@ -165,7 +166,7 @@ export class AuthController {
 	 * Retrieves all sessions for a user.
 	 *
 	 * @param {string} userId - ID of the user.
-	 * @returns {Promise<Session[]>} List of user sessions.
+	 * @returns {Promise<SessionSafe[]>} List of user sessions.
 	 */
 	@ApiProperty({
 		description: 'UUID of user',
@@ -183,15 +184,16 @@ export class AuthController {
 	@SuccessMessage('success.auth.sessions.found')
 	@Get('sessions/:userId')
 	@Roles(Role.ADMIN)
-	async sessions(@Param('userId') userId: string): Promise<Session[]> {
-		return await this.authService.getSessions(userId);
+	async sessions(@Param('userId') userId: string): Promise<SessionSafe[]> {
+		const sessions = await this.authService.getSessions(userId);
+		return sessions.map((session: Session) => this.authService.getSafeSession(session));
 	}
 
 	/**
 	 * Retrieves all sessions for current user.
 	 *
 	 * @param {User} user - ID of the user.
-	 * @returns {Promise<Session[]>} List of user sessions.
+	 * @returns {Promise<SessionSafe[]>} List of user sessions.
 	 */
 	@ApiOkResponse({
 		type: AuthResponseUserSessions,
@@ -203,15 +205,16 @@ export class AuthController {
 	@ApiBearerAuth('Bearer')
 	@SuccessMessage('success.auth.sessions.found')
 	@Get('sessions/me')
-	async sessionsMe(@UserDec() user: User): Promise<Session[]> {
-		return await this.authService.getSessions(user.id);
+	async sessionsMe(@UserDec() user: User): Promise<SessionSafe[]> {
+		const sessions = await this.authService.getSessions(user.id);
+		return sessions.map((session: Session) => this.authService.getSafeSession(session));
 	}
 
 	/**
 	 * Retrieves a session by ID.
 	 *
 	 * @param {string} id - Session ID.
-	 * @returns {Promise<Session>} Session details.
+	 * @returns {Promise<SessionSafe>} Session details.
 	 * @throws {SessionExceptionNotFound} If session is not found.
 	 */
 	@ApiProperty({
@@ -233,8 +236,8 @@ export class AuthController {
 	@ApiBearerAuth('Bearer')
 	@SuccessMessage('success.auth.session.found')
 	@Get('session/:id')
-	async session(@Param('id') id: string): Promise<Session> {
-		return await this.authService.getSession(id);
+	async session(@Param('id') id: string): Promise<SessionSafe> {
+		return this.authService.getSafeSession(await this.authService.getSession(id));
 	}
 
 	/**

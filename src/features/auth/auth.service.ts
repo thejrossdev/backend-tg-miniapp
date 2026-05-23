@@ -5,7 +5,13 @@ import { RefreshTokenDto, SignInUserDto, SignOutAllDeviceUserDto, SignOutUserDto
 import { Session } from '@/features/auth/entities';
 import { SessionExceptionNotFound, TelegramExceptionInvalid } from '@/features/auth/exceptions';
 import { AuthExceptionNotInit } from '@/features/auth/exceptions/auth-not-init.exception';
-import { AuthUserInit, AuthUserSessionAccessTokens, AuthUserSignedIn, AuthUserTokens } from '@/features/auth/types';
+import {
+	AuthUserInit,
+	AuthUserSessionAccessTokens,
+	AuthUserSignedIn,
+	AuthUserTokens,
+	SessionSafe,
+} from '@/features/auth/types';
 import { UserDtoCreate, UserDtoDelete, UserDtoInit, UserDtoValidate } from '@/features/users/dto';
 import { User } from '@/features/users/entities';
 import { UserExceptionNotFound } from '@/features/users/exceptions';
@@ -268,5 +274,16 @@ export class AuthService {
 		}
 		await this.cacheManager.del(dto.sessionId);
 		return user;
+	}
+
+	/**
+	 * Removes sensitive fields from a session entity to create a safe version.
+	 *
+	 * @param {Session} session - The session entity to make safe
+	 * @returns {SessionSafe} A user object without sensitive fields
+	 */
+	getSafeSession(session: Session): SessionSafe {
+		const { refresh_token, setEntityName, ...data } = session;
+		return data;
 	}
 }

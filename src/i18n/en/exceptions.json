@@ -8,7 +8,7 @@
 		"NOT_FOUND": "Session with identifier {identifier} was not found"
 	},
 	"telegram": {
-		"TELEGRAM_UNAUTHORIZED": "Some of the data provided `{data}` by Telegram is incorrect"
+		"TELEGRAM_UNAUTHORIZED": "Some of the data provided by Telegram is incorrect"
 	},
 	"auth": {
 		"INIT_UNAUTHORIZED": "User was not initialized"
