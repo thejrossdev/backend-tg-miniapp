@@ -6,6 +6,10 @@ import { RefreshTokenDto, SignInUserDto, SignOutAllDeviceUserDto, SignOutUserDto
 import { Session } from '@/features/auth/entities';
 import {
 	AuthResponseUserInit,
+	AuthResponseUserSession,
+	AuthResponseUserSessions,
+	AuthResponseUserSignedInSafe,
+	AuthResponseUserTokens,
 	AuthUserInit,
 	AuthUserSessionAccessTokens,
 	AuthUserSignedInSafe,
@@ -77,7 +81,7 @@ export class AuthController {
 		description: 'User credentials for sign in',
 	})
 	@ApiOkResponse({
-		type: SuccessResponse<AuthUserSignedInSafe>,
+		type: AuthResponseUserSignedInSafe,
 	})
 	@ApiUnauthorizedResponse({
 		description: 'Telegram token/data are invalid or older than 5 mins',
@@ -169,7 +173,7 @@ export class AuthController {
 		example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
 	})
 	@ApiOkResponse({
-		type: SuccessResponse<Session[]>,
+		type: AuthResponseUserSessions,
 	})
 	@ApiBadRequestResponse({
 		description: 'Validation failed',
@@ -190,7 +194,7 @@ export class AuthController {
 	 * @returns {Promise<Session[]>} List of user sessions.
 	 */
 	@ApiOkResponse({
-		type: SuccessResponse<Session[]>,
+		type: AuthResponseUserSessions,
 	})
 	@ApiBadRequestResponse({
 		description: 'Validation failed',
@@ -216,7 +220,7 @@ export class AuthController {
 		example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
 	})
 	@ApiOkResponse({
-		type: SuccessResponse<Session>,
+		type: AuthResponseUserSession,
 	})
 	@ApiBadRequestResponse({
 		description: 'Validation failed',
@@ -244,7 +248,7 @@ export class AuthController {
 		description: 'Data for refreshing the token',
 	})
 	@ApiOkResponse({
-		type: SuccessResponse<AuthUserSessionAccessTokens>,
+		type: AuthResponseUserTokens,
 	})
 	@ApiBadRequestResponse({
 		description: 'Validation failed',

@@ -1,4 +1,5 @@
-import { SuccessResponse } from '@/common/types';
+import { BaseSuccessResponse } from '@/common/types';
+import { Session } from '@/features/auth/entities';
 import { User } from '@/features/users/entities';
 import { UserSafe } from '@/features/users/types';
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
@@ -19,29 +20,77 @@ export class AuthUserInit {
 /**
  * Initial authentication response structure.
  */
-export class AuthResponseUserInit extends IntersectionType(SuccessResponse<string>, AuthUserInit) {}
+export class AuthResponseUserInit extends IntersectionType(BaseSuccessResponse, AuthUserInit) {}
 
 /**
  * Basic authentication tokens (access and refresh).
  */
-export type AuthUserTokens = {
+export class AuthUserTokens {
+	/**
+	 * JWT access token for API authorization
+	 * @example 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+	 */
+	@ApiProperty({
+		description:
+			'JWT access token used for authorizing API requests. Contains user payload and expires after a short period (e.g., 15-60 minutes)',
+		example:
+			'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+		type: String,
+	})
 	access_token: string;
+
+	/**
+	 * JWT refresh token for obtaining new access tokens
+	 * @example 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+	 */
+	@ApiProperty({
+		description:
+			'JWT refresh token used to obtain new access tokens without re-authentication. Has longer expiration time (e.g., 7-30 days) and should be stored securely',
+		example:
+			'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+		type: String,
+	})
 	refresh_token: string;
-};
+}
+
+/**
+ * Basic authentication response tokens (access and refresh).
+ */
+export class AuthResponseUserTokens extends IntersectionType(BaseSuccessResponse, AuthUserTokens) {}
+
+export class AuthUserSession {
+	@ApiProperty({
+		description: 'User session',
+		type: Session,
+	})
+	data: Session;
+}
+export class AuthResponseUserSession extends IntersectionType(BaseSuccessResponse, AuthUserSession) {}
+
+export class AuthUserSessions {
+	@ApiProperty({
+		description: 'User sessions',
+		type: [Session],
+	})
+	data: Session[];
+}
+export class AuthResponseUserSessions extends IntersectionType(BaseSuccessResponse, AuthUserSession) {}
 
 /**
  * Extended authentication tokens with session token.
  */
-export type AuthUserSessionTokens = AuthUserTokens & {
+export class AuthUserSessionTokens extends AuthUserTokens {
+	@ApiProperty()
 	session_token: string;
-};
+}
 
 /**
  * Session tokens with refresh time information.
  */
-export type AuthUserSessionRefreshTokens = AuthUserSessionTokens & {
+export class AuthUserSessionRefreshTokens extends AuthUserSessionTokens {
+	@ApiProperty()
 	session_refresh_time: string;
-};
+}
 
 /**
  * Session tokens with access token refresh time information.
@@ -54,10 +103,14 @@ export type AuthUserSessionAccessTokens = AuthUserSessionTokens & {
  * Complete user authentication response with full user data.
  */
 export class AuthUserSignedIn {
-	@ApiProperty()
+	@ApiProperty({
+		type: User,
+	})
 	data: User;
 
-	@ApiProperty()
+	@ApiProperty({
+		type: AuthUserSessionRefreshTokens,
+	})
 	tokens: AuthUserSessionRefreshTokens;
 }
 
@@ -65,9 +118,14 @@ export class AuthUserSignedIn {
  * Complete user authentication response with safe user data (sensitive fields removed).
  */
 export class AuthUserSignedInSafe {
-	@ApiProperty()
+	@ApiProperty({
+		type: UserSafe,
+	})
 	data: UserSafe;
 
-	@ApiProperty()
+	@ApiProperty({
+		type: AuthUserSessionRefreshTokens,
+	})
 	tokens: AuthUserSessionRefreshTokens;
 }
+export class AuthResponseUserSignedInSafe extends IntersectionType(BaseSuccessResponse, AuthUserSignedInSafe) {}

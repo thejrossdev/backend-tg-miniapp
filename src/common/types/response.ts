@@ -3,14 +3,43 @@ import { SuccessCode } from '@/common/enums/success-code.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export type BaseResponse = {
+	/**
+	 * Indicates whether the operation was successful
+	 */
 	success: boolean;
+
+	/**
+	 * Human-readable success message (translated)
+	 */
 	message: string;
+	/**
+	 * Optional custom error code.
+	 */
 	code: string;
+
+	/**
+	 * HTTP status code for the response.
+	 */
 	statusCode: number;
+
+	/**
+	 * Response timestamp
+	 */
 	timestamp: string;
-	traceId?: string;
+	/**
+	 * Request path that generated this response.
+	 */
 	path?: string;
+
+	/**
+	 * HTTP method used for the request.
+	 */
 	method?: string;
+
+	/**
+	 * Unique trace identifier for the request.
+	 */
+	traceId?: string;
 };
 
 /**
@@ -51,6 +80,70 @@ export interface SuccessResponseOptions {
 	 * Unique trace identifier for the request.
 	 */
 	traceId?: string;
+}
+
+/**
+ * Standardized success response format with metadata.
+ *
+ * @template T - Type of data included in the response
+ */
+export class BaseSuccessResponse implements BaseResponse {
+	/**
+	 * Indicates whether the operation was successful
+	 * @example true
+	 */
+	@ApiProperty({
+		description: 'Operation success flag. true - operation completed successfully, false - an error occurred',
+		example: true,
+		type: Boolean,
+	})
+	success: boolean;
+
+	/**
+	 * Human-readable success message (translated)
+	 * @example 'Operation completed successfully'
+	 */
+	@ApiProperty({
+		description: 'Localized message describing the operation result. Suitable for displaying to users',
+		example: 'Operation completed successfully',
+		type: String,
+	})
+	message: string;
+
+	/**
+	 * Standardized success code
+	 * @example SuccessCode.SUCCESS
+	 */
+	@ApiProperty({
+		description: 'Standardized operation status code. Used for programmatic response handling',
+		example: SuccessCode.SUCCESS,
+		enum: SuccessCode,
+		enumName: 'SuccessCode',
+	})
+	code: SuccessCode;
+
+	/**
+	 * HTTP status code
+	 * @example 200
+	 */
+	@ApiProperty({
+		description: 'HTTP status code (200, 201, 400, 401, 403, 404, 500, etc.)',
+		example: 200,
+		type: Number,
+	})
+	statusCode: number;
+
+	/**
+	 * Response timestamp
+	 * @example '2026-05-19T01:32:55.443Z'
+	 */
+	@ApiProperty({
+		description: 'ISO 8601 timestamp indicating when the response was generated',
+		example: '2026-05-19T01:32:55.443Z',
+		type: String,
+		format: 'date-time',
+	})
+	timestamp: string;
 }
 
 /**
