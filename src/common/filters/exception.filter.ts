@@ -53,6 +53,10 @@ export class RequestExceptionFilter implements ExceptionFilter {
 				code = ErrorCode.NOT_FOUND;
 				message = this.i18n.t('exceptions.NOT_FOUND');
 			}
+
+			if (status === 401 && code === ErrorCode.INTERNAL_ERROR) {
+				code = ErrorCode.UNAUTHORIZED;
+			}
 		}
 
 		const response: BadResponse = {
