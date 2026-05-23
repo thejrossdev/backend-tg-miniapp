@@ -1,14 +1,25 @@
+import { SuccessResponse } from '@/common/types';
 import { User } from '@/features/users/entities';
 import { UserSafe } from '@/features/users/types';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 
 /**
  * Initial authentication data structure.
  */
 export class AuthUserInit {
-	@ApiProperty()
+	@ApiProperty({
+		description: 'Temporary authentication token',
+		example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+		type: String,
+		required: true,
+	})
 	data: string;
 }
+
+/**
+ * Initial authentication response structure.
+ */
+export class AuthResponseUserInit extends IntersectionType(SuccessResponse<string>, AuthUserInit) {}
 
 /**
  * Basic authentication tokens (access and refresh).

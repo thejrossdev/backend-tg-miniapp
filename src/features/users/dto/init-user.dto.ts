@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, MinLength } from 'class-validator';
 
-export class InitUserDto {
+export class UserDtoInit {
 	@ApiProperty({
 		description:
 			'A string with raw data transferred to the Mini App, convenient for validating data.\n' +
@@ -12,6 +12,6 @@ export class InitUserDto {
 		minLength: 32,
 	})
 	@IsString()
-	@MinLength(32)
+	@MinLength(32, { message: '32' })
 	initData: string;
 }

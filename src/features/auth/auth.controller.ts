@@ -1,25 +1,31 @@
 import { Public, Roles, User as UserDec } from '@/common/decorators';
 import { Role } from '@/common/enums';
 import { JwtRefreshGuard } from '@/common/guards';
-import { GI18nService } from '@/common/services';
-import { SuccessResponse } from '@/common/types';
-import {
-	DeleteUserDto,
-	InitUserDto,
-	RefreshTokenDto,
-	SignInUserDto,
-	SignOutAllDeviceUserDto,
-	SignOutUserDto,
-} from '@/features/auth/dto';
+import { BadResponse, InternalResponse, SuccessResponse } from '@/common/types';
+import { RefreshTokenDto, SignInUserDto, SignOutAllDeviceUserDto, SignOutUserDto } from '@/features/auth/dto';
 import { Session } from '@/features/auth/entities';
-import { AuthUserInit, AuthUserSessionAccessTokens, AuthUserSignedInSafe } from '@/features/auth/types';
+import {
+	AuthResponseUserInit,
+	AuthUserInit,
+	AuthUserSessionAccessTokens,
+	AuthUserSignedInSafe,
+} from '@/features/auth/types';
+import { UserDtoDelete, UserDtoInit } from '@/features/users/dto';
 import { User } from '@/features/users/entities';
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiProperty } from '@nestjs/swagger';
+import {
+	ApiBadRequestResponse,
+	ApiBearerAuth,
+	ApiBody,
+	ApiInternalServerErrorResponse,
+	ApiNotFoundResponse,
+	ApiOkResponse,
+	ApiProperty,
+	ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 
 /**
- * // TODO Add @ApiUnauthorizedResponse & @ApiBadRequestResponse
  * Controller for handling authentication and user account related endpoints.
  */
 @Controller('auth')
@@ -27,31 +33,36 @@ export class AuthController {
 	/**
 	 * Creates an instance of AuthController.
 	 *
-	 * @param {GI18nService} i18n - Service for translating.
 	 * @param {AuthService} authService - The authentication service.
 	 */
-	constructor(
-		private readonly i18n: GI18nService,
-		private readonly authService: AuthService,
-	) {}
+	constructor(private readonly authService: AuthService) {}
 
 	/**
 	 * Signs in a user.
 	 *
-	 * @param {InitUserDto} initUserDto - User credentials for init.
-	 * @returns {Promise<AuthUserInit >} Initialized response with temporary SessionId.
+	 * @param {UserDtoInit} userDtoInit - User credentials for init.
+	 * @returns {Promise<AuthDataUserInit>} Initialized response with temporary SessionId.
+	 * @throws{TelegramExceptionInvalid} if telegram token are invalid or older than 5 mins
 	 */
 	@ApiBody({
-		type: InitUserDto,
+		type: UserDtoInit,
 		description: 'Telegram WebApp init data',
 	})
 	@ApiOkResponse({
-		type: SuccessResponse<AuthUserInit>,
+		type: AuthResponseUserInit,
+	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
+	})
+	@ApiUnauthorizedResponse({
+		description: 'Telegram token/data are invalid or older than 5 mins',
+		type: InternalResponse,
 	})
 	@Public()
 	@Post('init')
-	async initTelegramAuth(@Body() initUserDto: InitUserDto): Promise<AuthUserInit> {
-		return await this.authService.init(initUserDto);
+	async initTelegramAuth(@Body() userDtoInit: UserDtoInit): Promise<AuthUserInit> {
+		return await this.authService.init(userDtoInit);
 	}
 
 	/**
@@ -66,6 +77,18 @@ export class AuthController {
 	})
 	@ApiOkResponse({
 		type: SuccessResponse<AuthUserSignedInSafe>,
+	})
+	@ApiUnauthorizedResponse({
+		description: 'Telegram token/data are invalid or older than 5 mins',
+		type: InternalResponse,
+	})
+	@ApiUnauthorizedResponse({
+		description: 'User was not initialized',
+		type: InternalResponse,
+	})
+	@ApiInternalServerErrorResponse({
+		description: 'Cant create a user',
+		type: InternalResponse,
 	})
 	@Public()
 	@Post('sign-in')
@@ -84,6 +107,7 @@ export class AuthController {
 	 *
 	 * @param {SignOutUserDto} signOutUserDto - Data for signing out.
 	 * @returns {Promise<SuccessResponse>} Response message.
+	 * @throws {SessionExceptionNotFound} If session is not found.
 	 */
 	@ApiBody({
 		type: SignOutUserDto,
@@ -91,6 +115,14 @@ export class AuthController {
 	})
 	@ApiOkResponse({
 		type: SuccessResponse,
+	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
+	})
+	@ApiNotFoundResponse({
+		description: 'User not found',
+		type: InternalResponse,
 	})
 	@ApiBearerAuth('Bearer')
 	@Post('sign-out')
@@ -110,6 +142,10 @@ export class AuthController {
 	})
 	@ApiOkResponse({
 		type: SuccessResponse,
+	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
 	})
 	@ApiBearerAuth('Bearer')
 	@Post('sign-out-allDevices')
@@ -131,6 +167,10 @@ export class AuthController {
 	@ApiOkResponse({
 		type: SuccessResponse<Session[]>,
 	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
+	})
 	@ApiBearerAuth('Bearer')
 	@Get('sessions/:userId')
 	@Roles(Role.ADMIN)
@@ -147,6 +187,10 @@ export class AuthController {
 	@ApiOkResponse({
 		type: SuccessResponse<Session[]>,
 	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
+	})
 	@ApiBearerAuth('Bearer')
 	@Get('sessions/me')
 	async sessionsMe(@UserDec() user: User): Promise<Session[]> {
@@ -158,6 +202,7 @@ export class AuthController {
 	 *
 	 * @param {string} id - Session ID.
 	 * @returns {Promise<Session>} Session details.
+	 * @throws {SessionExceptionNotFound} If session is not found.
 	 */
 	@ApiProperty({
 		description: 'UUID of session',
@@ -166,6 +211,14 @@ export class AuthController {
 	})
 	@ApiOkResponse({
 		type: SuccessResponse<Session>,
+	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
+	})
+	@ApiNotFoundResponse({
+		description: 'Session not found',
+		type: InternalResponse,
 	})
 	@ApiBearerAuth('Bearer')
 	@Get('session/:id')
@@ -186,6 +239,18 @@ export class AuthController {
 	@ApiOkResponse({
 		type: SuccessResponse<AuthUserSessionAccessTokens>,
 	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
+	})
+	@ApiNotFoundResponse({
+		description: 'User not found',
+		type: InternalResponse,
+	})
+	@ApiNotFoundResponse({
+		description: 'Session not found',
+		type: InternalResponse,
+	})
 	@ApiBearerAuth('Bearer')
 	@UseGuards(JwtRefreshGuard)
 	@Patch('refresh-token')
@@ -202,20 +267,34 @@ export class AuthController {
 	/**
 	 * Deletes the user account.
 	 *
-	 * @param {DeleteUserDto} deleteUserDto - Data for deleting the user.
+	 * @param {UserDtoDelete} dto - Data for deleting the user.
 	 * @returns {Promise<void>} Response message.
+	 * @throws {UserExceptionNotFound} If user is not found.
+	 * @throws {UserExceptionDeleteFail} If credentials are invalid or deletion fails.
 	 */
 	@ApiBody({
-		type: DeleteUserDto,
+		type: UserDtoDelete,
 		description: 'Data for deleting the user',
 	})
 	@ApiOkResponse({
 		type: SuccessResponse,
 	})
+	@ApiBadRequestResponse({
+		description: 'Validation failed',
+		type: BadResponse,
+	})
+	@ApiNotFoundResponse({
+		description: 'User not found',
+		type: InternalResponse,
+	})
+	@ApiInternalServerErrorResponse({
+		description: 'Cant delete a user',
+		type: InternalResponse,
+	})
 	@ApiBearerAuth('Bearer')
 	@Delete('delete-account')
 	@Roles(Role.ADMIN)
-	async deleteUser(@Body() deleteUserDto: DeleteUserDto): Promise<void> {
-		await this.authService.deleteAccount(deleteUserDto);
+	async deleteUser(@Body() dto: UserDtoDelete): Promise<void> {
+		await this.authService.deleteAccount(dto);
 	}
 }

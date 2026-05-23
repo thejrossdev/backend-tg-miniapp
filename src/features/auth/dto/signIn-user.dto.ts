@@ -1,8 +1,8 @@
-import { InitUserDto } from '@/features/auth/dto/init-user.dto';
+import { UserDtoInit } from '@/features/users/dto/init-user.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
 
-export class SignInUserDto extends InitUserDto {
+export class SignInUserDto extends UserDtoInit {
 	@ApiProperty()
 	@IsOptional()
 	@IsString()

@@ -2,7 +2,7 @@ import { Optional } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
-export class CreateUserDto {
+export class UserDtoCreate {
 	@ApiProperty({
 		description: 'Telegram ID encrypted using AEGIS-256',
 		required: true,
@@ -25,8 +25,8 @@ export class CreateUserDto {
 		minLength: 34,
 	})
 	@IsString()
-	@MinLength(34)
-	@MaxLength(34)
+	@MinLength(34, { message: '34' })
+	@MaxLength(34, { message: '34' })
 	@Optional()
 	referrerCode?: string;
 }

@@ -1,5 +1,6 @@
 import { ErrorCode } from '@/common/enums';
 import { GI18nService } from '@/common/services';
+import { BadResponse } from '@/common/types';
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { FastifyReply, FastifyRequest } from 'fastify';
@@ -54,7 +55,7 @@ export class RequestExceptionFilter implements ExceptionFilter {
 			}
 		}
 
-		rep.code(status).send({
+		const response: BadResponse = {
 			success: false,
 			statusCode: status,
 			code,
@@ -64,6 +65,8 @@ export class RequestExceptionFilter implements ExceptionFilter {
 			path: req.originalUrl || req.url,
 			method: req.method,
 			timestamp: new Date().toISOString(),
-		});
+		};
+
+		rep.code(status).send(response);
 	}
 }
