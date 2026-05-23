@@ -1,4 +1,4 @@
-import { Public, Roles, User as UserDec } from '@/common/decorators';
+import { Public, Roles, SuccessMessage, User as UserDec } from '@/common/decorators';
 import { Role } from '@/common/enums';
 import { JwtRefreshGuard } from '@/common/guards';
 import { BadResponse, InternalResponse, SuccessResponse } from '@/common/types';
@@ -41,7 +41,7 @@ export class AuthController {
 	 * Signs in a user.
 	 *
 	 * @param {UserDtoInit} userDtoInit - User credentials for init.
-	 * @returns {Promise<AuthDataUserInit>} Initialized response with temporary SessionId.
+	 * @returns {Promise<AuthUserInit>} Initialized response with temporary SessionId.
 	 * @throws{TelegramExceptionInvalid} if telegram token are invalid or older than 5 mins
 	 */
 	@ApiBody({
@@ -59,6 +59,7 @@ export class AuthController {
 		description: 'Telegram token/data are invalid or older than 5 mins',
 		type: InternalResponse,
 	})
+	@SuccessMessage('success.auth.init')
 	@Public()
 	@Post('init')
 	async initTelegramAuth(@Body() userDtoInit: UserDtoInit): Promise<AuthUserInit> {
@@ -91,6 +92,7 @@ export class AuthController {
 		type: InternalResponse,
 	})
 	@Public()
+	@SuccessMessage('success.auth.sign-in')
 	@Post('sign-in')
 	async init(@Body() signInUserDto: SignInUserDto): Promise<AuthUserSignedInSafe> {
 		const data = await this.authService.signIn(signInUserDto);
@@ -125,6 +127,7 @@ export class AuthController {
 		type: InternalResponse,
 	})
 	@ApiBearerAuth('Bearer')
+	@SuccessMessage('success.auth.sign-out')
 	@Post('sign-out')
 	async signOut(@Body() signOutUserDto: SignOutUserDto): Promise<void> {
 		await this.authService.signOut(signOutUserDto);
@@ -148,6 +151,7 @@ export class AuthController {
 		type: BadResponse,
 	})
 	@ApiBearerAuth('Bearer')
+	@SuccessMessage('success.auth.sign-out-all')
 	@Post('sign-out-allDevices')
 	async signOutAllDevices(@Body() dto: SignOutAllDeviceUserDto): Promise<void> {
 		await this.authService.signOutAllDevices(dto);
@@ -172,6 +176,7 @@ export class AuthController {
 		type: BadResponse,
 	})
 	@ApiBearerAuth('Bearer')
+	@SuccessMessage('success.auth.sessions.found')
 	@Get('sessions/:userId')
 	@Roles(Role.ADMIN)
 	async sessions(@Param('userId') userId: string): Promise<Session[]> {
@@ -192,6 +197,7 @@ export class AuthController {
 		type: BadResponse,
 	})
 	@ApiBearerAuth('Bearer')
+	@SuccessMessage('success.auth.sessions.found')
 	@Get('sessions/me')
 	async sessionsMe(@UserDec() user: User): Promise<Session[]> {
 		return await this.authService.getSessions(user.id);
@@ -221,6 +227,7 @@ export class AuthController {
 		type: InternalResponse,
 	})
 	@ApiBearerAuth('Bearer')
+	@SuccessMessage('success.auth.session.found')
 	@Get('session/:id')
 	async session(@Param('id') id: string): Promise<Session> {
 		return await this.authService.getSession(id);
@@ -252,6 +259,7 @@ export class AuthController {
 		type: InternalResponse,
 	})
 	@ApiBearerAuth('Bearer')
+	@SuccessMessage('success.auth.refresh')
 	@UseGuards(JwtRefreshGuard)
 	@Patch('refresh-token')
 	async refreshToken(@Body() dto: RefreshTokenDto): Promise<AuthUserSessionAccessTokens> {
@@ -292,6 +300,7 @@ export class AuthController {
 		type: InternalResponse,
 	})
 	@ApiBearerAuth('Bearer')
+	@SuccessMessage('success.users.deleted')
 	@Delete('delete-account')
 	@Roles(Role.ADMIN)
 	async deleteUser(@Body() dto: UserDtoDelete): Promise<void> {

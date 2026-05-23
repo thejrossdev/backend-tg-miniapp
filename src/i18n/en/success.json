@@ -4,13 +4,27 @@
 	"resource-created": "Resource created successfully",
 	"resource-updated": "Resource updated successfully",
 	"resource-deleted": "Resource deleted successfully",
-
 	"auth": {
-		"sign-in": "User signed in successfully!",
-		"sign-out": "User signed out successfully!",
-		"sign-out-allDevices": "User signed out from all devices successfully!",
-		"refresh-token": "Refresh token generated successfully!",
-		"delete-account": "User deleted successfully!"
+		"init": "User initialized successfully",
+		"sign-in": "User signed in successfully",
+		"sign-out": "User signed out successfully",
+		"sign-out-all": "User signed out from all devices successfully",
+		"refresh": "Refresh token generated successfully",
+		"delete": "User deleted successfully",
+		"sessions": {
+			"found": "Sessions retrieved successfully",
+			"found-all": "Sessions retrieved successfully",
+			"created": "Sessions created successfully",
+			"updated": "Sessions updated successfully",
+			"deleted": "Sessions deleted successfully"
+		},
+		"session": {
+			"found": "Session retrieved successfully",
+			"found-all": "Session retrieved successfully",
+			"created": "Session created successfully",
+			"updated": "Session updated successfully",
+			"deleted": "Session deleted successfully"
+		}
 	},
 	"users": {
 		"found": "User retrieved successfully",
