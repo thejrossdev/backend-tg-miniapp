@@ -45,7 +45,7 @@
 		"cache-manager": "^7.2.8",
 		"dotenv": "^17.4.2",
 		"fastify": "^5.8.5",
-		"helmet": "^8.1.0",
+		"helmet": "^8.2.0",
 		"libsodium-wrappers": "^0.8.4",
 		"multer": "2.1.1",
 		"nestjs-i18n": "^10.8.4",
