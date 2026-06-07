@@ -10,7 +10,7 @@ jobs:
     name: Chanegelog Generator
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - uses: etcdigital/pull-request-changelog@master
         with:
           token: ${{ secrets.CHANGE_LOG }}
